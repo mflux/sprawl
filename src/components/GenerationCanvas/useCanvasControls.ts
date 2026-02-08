@@ -1,4 +1,5 @@
 import { Vector2D } from '../../modules/Vector2D';
+import engine from '../../state/engine';
 import p5 from 'p5';
 
 interface P5Touch {
@@ -143,6 +144,27 @@ export function attachCanvasControls(
         );
         transform.scale = newS;
         return false;
+    };
+
+    let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    // Hover - Detect shape under mouse (debounced)
+    p.mouseMoved = () => {
+        if (hoverTimeout) clearTimeout(hoverTimeout);
+        hoverTimeout = setTimeout(() => {
+            const s = engine.state;
+            if (!s.shapeGrid) {
+                s.hoveredShapeIndex = null;
+                return;
+            }
+            const worldX = (p.mouseX - transform.offset.x) / transform.scale;
+            const worldY = (p.mouseY - transform.offset.y) / transform.scale;
+            const found = s.shapeGrid.findShapeAt(new Vector2D(worldX, worldY));
+            const newIndex = found ? s.shapes.indexOf(found) : null;
+            if (newIndex !== s.hoveredShapeIndex) {
+                s.hoveredShapeIndex = newIndex;
+            }
+        }, 4);
     };
 
     // Window resize - Adjust canvas size

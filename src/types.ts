@@ -189,6 +189,7 @@ export interface GenerationState {
   shorelines: Segment2D[];
   geography: GeographyMetadata;
   hoveredGeoId: string | null;
+  hoveredShapeIndex: number | null;
   activeSubdivisionIndex: number | null;
   usageMap: Map<string, number>;
   usageCount: number;

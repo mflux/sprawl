@@ -187,7 +187,7 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ activeStep }
         }
 
         layerStart = performance.now();
-        Drawers.drawShapes(p, s.shapes, s.arterials, null, s.activeSubdivisionIndex, viewBounds, shapesGraphicsRef.current ?? undefined, s.processedShapeIndices);
+        Drawers.drawShapes(p, s.shapes, s.arterials, s.hoveredShapeIndex, s.activeSubdivisionIndex, viewBounds, shapesGraphicsRef.current ?? undefined, s.processedShapeIndices);
         s.renderTimings['SHAPE_RENDER'] = performance.now() - layerStart;
 
         layerStart = performance.now();

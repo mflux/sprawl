@@ -73,6 +73,7 @@ export const state: GenerationState = {
   shorelines: [],
   geography: { hubs: [], waterBodies: [], bridges: [], notableShapes: [] },
   hoveredGeoId: null,
+  hoveredShapeIndex: null,
   activeSubdivisionIndex: null,
   usageMap: new Map(),
   usageCount: 0,
@@ -121,6 +122,7 @@ export function resetEngine(): void {
   state.shorelines = [];
   state.geography = { hubs: [], waterBodies: [], bridges: [], notableShapes: [] };
   state.hoveredGeoId = null;
+  state.hoveredShapeIndex = null;
   state.activeSubdivisionIndex = null;
   state.usageMap = new Map();
   state.usageCount = 0;
