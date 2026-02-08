@@ -1,8 +1,10 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import engine from '../../state/engine';
 import * as Drawers from './drawers';
 import { Vector2D } from '../../modules/Vector2D';
+import { useElevationWorkers } from './useElevationWorkers';
+import type { ElevationChunkJob, ElevationChunkResult } from '../../workers/elevation.types';
 
 import p5 from 'p5';
 
@@ -12,110 +14,6 @@ const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 interface GenerationCanvasProps {
   activeStep: number;
 }
-
-// WORKER CODE AS A BLOB-SAFE STRING
-const WORKER_CODE = `
-  class SimpleNoise {
-    constructor(seedValue) {
-      this.p = new Array(512);
-      const permutation = Array.from({ length: 256 }, (_, i) => i);
-      let seed = Math.floor(seedValue * 10000);
-      for (let i = 255; i > 0; i--) {
-        seed = (seed * 9301 + 49297) % 233280;
-        const j = Math.floor((seed / 233280) * (i + 1));
-        [permutation[i], permutation[j]] = [permutation[j], permutation[i]];
-      }
-      for (let i = 0; i < 256; i++) {
-        this.p[i] = this.p[i + 256] = permutation[i];
-      }
-    }
-    fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
-    lerp(t, a, b) { return a + t * (b - a); }
-    grad(hash, x, y) {
-      const h = hash & 15;
-      const u = h < 8 ? x : y;
-      const v = h < 4 ? y : h === 12 || h === 14 ? x : 0;
-      return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
-    }
-    noise(x, y) {
-      const X = Math.floor(x) & 255;
-      const Y = Math.floor(y) & 255;
-      x -= Math.floor(x);
-      y -= Math.floor(y);
-      const u = this.fade(x);
-      const v = this.fade(y);
-      const A = this.p[X] + Y, AA = this.p[A], AB = this.p[A + 1];
-      const B = this.p[X + 1] + Y, BA = this.p[B], BB = this.p[B + 1];
-      return this.lerp(v, this.lerp(u, this.grad(this.p[AA], x, y), this.grad(this.p[BA], x - 1, y)),
-                           this.lerp(u, this.grad(this.p[AB], x, y - 1), this.grad(this.p[BB], x - 1, y - 1)));
-    }
-  }
-
-  const getHeight = (x, y, noise, params) => {
-    let amplitude = 1.0, frequency = params.terrainScale, noiseValue = 0, maxAmplitude = 0;
-    for (let i = 0; i < 4; i++) {
-      const sampleX = (x + params.seed * 10000) * frequency;
-      const sampleY = (y + params.seed * 10000) * frequency;
-      noiseValue += noise.noise(sampleX, sampleY) * amplitude;
-      maxAmplitude += amplitude; amplitude *= 0.5; frequency *= 2.0;
-    }
-    let height = (noiseValue / maxAmplitude + 1) / 2;
-    for (const river of params.rivers) {
-      let minDistSq = Infinity;
-      for (let i = 0; i < river.points.length - 1; i++) {
-        const p1 = river.points[i], p2 = river.points[i + 1];
-        const dx = p2.x - p1.x, dy = p2.y - p1.y;
-        const d2 = dx * dx + dy * dy;
-        const t = d2 === 0 ? 0 : Math.max(0, Math.min(1, ((x - p1.x) * dx + (y - p1.y) * dy) / d2));
-        const dSq = (x - (p1.x + t * dx)) ** 2 + (y - (p1.y + t * dy)) ** 2;
-        if (dSq < minDistSq) minDistSq = dSq;
-      }
-      const minDist = Math.sqrt(minDistSq);
-      if (minDist < river.width) height -= Math.cos((minDist / river.width) * (Math.PI / 2)) * river.depth;
-    }
-    return Math.max(0, Math.min(1, height));
-  };
-
-  const getColor = (h, wl) => {
-    if (h < wl) return [8, 47, 73];
-    if (h < wl + 0.04) return [15, 23, 42];
-    if (h < 0.55) return [30, 41, 59];
-    if (h < 0.75) return [51, 65, 85];
-    if (h < 0.9) return [71, 85, 105];
-    return [100, 116, 139];
-  };
-
-  self.onmessage = (e) => {
-    const p = e.data;
-    const noise = new SimpleNoise(p.seed);
-    const data = new Uint8ClampedArray(p.chunkW * p.chunkH * 4);
-    const lx = -0.5, ly = -0.5, lz = 0.707;
-    for (let y = 0; y < p.chunkH; y++) {
-      for (let x = 0; x < p.chunkW; x++) {
-        const wx = p.originX + (p.chunkX + x) * p.res, wy = p.originY + (p.chunkY + y) * p.res;
-        const hC = getHeight(wx, wy, noise, p);
-        let shading = 1.0;
-        if (hC >= p.waterLevel) {
-          const eps = p.res;
-          const hL = getHeight(wx - eps, wy, noise, p), hR = getHeight(wx + eps, wy, noise, p);
-          const hU = getHeight(wx, wy - eps, noise, p), hD = getHeight(wx, wy + eps, noise, p);
-          const strength = 750.0;
-          const nx = -(hR - hL) * (strength / eps), ny = -(hD - hU) * (strength / eps), nz = 1.0;
-          const nLen = Math.sqrt(nx * nx + ny * ny + nz * nz);
-          const dot = (nx / nLen * lx) + (ny / nLen * ly) + (nz / nLen * lz);
-          shading = 0.8 + (dot - 0.1) * 0.4;
-        }
-        const rgb = getColor(hC, p.waterLevel);
-        const idx = (x + y * p.chunkW) * 4;
-        data[idx] = Math.min(255, rgb[0] * shading);
-        data[idx+1] = Math.min(255, rgb[1] * shading);
-        data[idx+2] = Math.min(255, rgb[2] * shading);
-        data[idx+3] = 255;
-      }
-    }
-    self.postMessage({ chunkX: p.chunkX, chunkY: p.chunkY, chunkW: p.chunkW, chunkH: p.chunkH, data }, [data.buffer]);
-  };
-`;
 
 export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ activeStep }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -133,7 +31,6 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ activeStep }
   const lastArterialsCountRef = useRef<number>(0);
   const lastRoadsCountRef = useRef<number>(0);
 
-  const workerPoolRef = useRef<Worker[]>([]);
   const bakeJobCountRef = useRef<number>(0);
   const completedJobsRef = useRef<number>(0);
 
@@ -145,6 +42,33 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ activeStep }
   const roadsGraphicsRef = useRef<p5.Graphics | null>(null);
   
   const lastResetHandledRef = useRef<number>(0);
+
+  // Elevation worker chunk callback
+  const handleChunkComplete = useCallback((result: ElevationChunkResult) => {
+    const { chunkX, chunkY, chunkW, chunkH, data } = result;
+    if (elevationGraphicsRef.current && p5Instance.current) {
+      const pg = elevationGraphicsRef.current;
+      const img = p5Instance.current.createImage(chunkW, chunkH);
+      img.loadPixels();
+      (img.pixels as unknown as Uint8ClampedArray).set(data);
+      img.updatePixels();
+      pg.image(img, chunkX, chunkY);
+      completedJobsRef.current++;
+      if (bakeJobCountRef.current > 0) {
+        engine.state.elevationBakeProgress = (completedJobsRef.current / bakeJobCountRef.current) * 100;
+        if (completedJobsRef.current >= bakeJobCountRef.current) {
+          engine.state.isBakingElevation = false;
+        }
+      }
+      engine.notify();
+    }
+  }, []);
+
+  const { dispatchJobs } = useElevationWorkers(handleChunkComplete);
+
+  // Stable ref so the p5 draw closure can access it
+  const dispatchJobsRef = useRef(dispatchJobs);
+  useEffect(() => { dispatchJobsRef.current = dispatchJobs; }, [dispatchJobs]);
 
   // Keep activeStep ref in sync
   useEffect(() => {
@@ -176,38 +100,6 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ activeStep }
   }, []);
 
   useEffect(() => {
-    const blob = new Blob([WORKER_CODE], { type: 'application/javascript' });
-    const blobUrl = URL.createObjectURL(blob);
-    const numWorkers = IS_MOBILE ? 1 : Math.max(2, Math.min(navigator.hardwareConcurrency || 4, 4));
-    const pool: Worker[] = [];
-
-    const handleMessage = (e: MessageEvent) => {
-      const { chunkX, chunkY, chunkW, chunkH, data } = e.data;
-      if (elevationGraphicsRef.current && p5Instance.current) {
-        const pg = elevationGraphicsRef.current;
-        const img = p5Instance.current.createImage(chunkW, chunkH);
-        img.loadPixels();
-        (img.pixels as unknown as Uint8ClampedArray).set(data);
-        img.updatePixels();
-        pg.image(img, chunkX, chunkY);
-        completedJobsRef.current++;
-        if (bakeJobCountRef.current > 0) {
-          engine.state.elevationBakeProgress = (completedJobsRef.current / bakeJobCountRef.current) * 100;
-          if (completedJobsRef.current >= bakeJobCountRef.current) {
-            engine.state.isBakingElevation = false;
-          }
-        }
-        engine.notify();
-      }
-    };
-
-    for (let i = 0; i < numWorkers; i++) {
-      const worker = new Worker(blobUrl);
-      worker.onmessage = handleMessage;
-      pool.push(worker);
-    }
-    workerPoolRef.current = pool;
-
     if (!containerRef.current) return;
 
     const sketch = (p: p5) => {
@@ -252,7 +144,7 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ activeStep }
         const targetRes = IS_MOBILE ? baseRes * 2 : baseRes;
         const resChanged = Math.abs(targetRes - lastElevationResRef.current) > 0.01;
 
-        // Synthesis Phase
+        // Synthesis Phase — dispatch elevation chunks to worker pool
         if (s.elevation && (s.elevation !== lastElevationRef.current || resChanged)) {
           const bakeStart = performance.now();
           lastElevationRef.current = s.elevation;
@@ -268,7 +160,7 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ activeStep }
           s.elevationBakeProgress = 0;
           completedJobsRef.current = 0;
           const chunkSize = IS_MOBILE ? 256 : 128;
-          const jobList = [];
+          const jobList: ElevationChunkJob[] = [];
           for (let cx = 0; cx < tw; cx += chunkSize) {
             for (let cy = 0; cy < th; cy += chunkSize) {
               jobList.push({
@@ -280,10 +172,7 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ activeStep }
             }
           }
           bakeJobCountRef.current = jobList.length;
-          jobList.forEach((job, index) => {
-            const worker = workerPoolRef.current[index % workerPoolRef.current.length];
-            worker.postMessage(job);
-          });
+          dispatchJobsRef.current(jobList);
           s.renderTimings['ELEV_BAKE_INIT'] = performance.now() - bakeStart;
           engine.notify();
         }
@@ -475,8 +364,6 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ activeStep }
     p5Instance.current = new p5(sketch);
     return () => {
       if (p5Instance.current) p5Instance.current.remove();
-      workerPoolRef.current.forEach(w => w.terminate());
-      URL.revokeObjectURL(blobUrl);
       if (flowGraphicsRef.current) flowGraphicsRef.current.remove();
       if (elevationGraphicsRef.current) elevationGraphicsRef.current.remove();
       if (shorelineInteriorGraphicsRef.current) shorelineInteriorGraphicsRef.current.remove();
