@@ -14,6 +14,8 @@ export const drawHubs = (p: p5, hubs: Hub[], bounds: ViewBounds) => {
     if (!isBoxInView(hub.position.x - hub.size * 2, hub.position.y - hub.size * 2, hub.position.x + hub.size * 2, hub.position.y + hub.size * 2, bounds)) return;
 
     const age = now - (hub.spawnTime || 0);
+    // Hub hasn't "arrived" yet — skip until its staggered spawn time
+    if (age < 0) return;
     const isSpawning = age < 1500;
 
     // 1. Spawning Animation (Ripples and Impacts)

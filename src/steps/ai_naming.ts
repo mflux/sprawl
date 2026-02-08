@@ -14,13 +14,10 @@ export const step: StepDefinition = {
     renderElevation: true,
     renderShorelines: false,
   },
-  phase: 'naming',
   hasSimControls: false,
   highResElevation: true,
   execute: async () => {
-    engine.setPhase('naming', true);
     await runAINaming();
-    engine.setPhase('idle');
     engine.tick();
   },
   isComplete: () => true,

@@ -1,4 +1,4 @@
-import engine, { state, addEvent, getPhase } from '../state/engine';
+import engine, { state, addEvent } from '../state/engine';
 import { TransposeGrid } from '../modules/TransposeGrid';
 import { ArterialDetector } from '../modules/ArterialDetector';
 import { RoadNetwork } from '../modules/RoadNetwork';
@@ -15,16 +15,68 @@ export const step: StepDefinition = {
   title: 'Block Subdivision',
   desc: 'Refines blocks with internal streets. Uses a Transpose Grid approach aligned to the longest arterial in each block.',
   vizTransitions: {},
-  phase: 'subdivision',
   initialSimSpeed: 1,
   hasSimControls: true,
   execute: () => {
     prepareSubdivision();
     engine.tick();
-    engine.startPhase('subdivision');
+    engine.runLoop({
+      onTick: subdivisionTick,
+      onStep: subdivisionStep,
+      onResolve: subdivisionResolve,
+      intervalMs: 16,
+    });
   },
-  isComplete: () => state.subdivisionQueue.length === 0 && getPhase() !== 'subdivision',
+  isComplete: () => state.subdivisionQueue.length === 0 && !engine.isRunning(),
 };
+
+function subdivisionTick(): void {
+  const speed = Math.max(1, state.settings.simSpeed);
+  for (let i = 0; i < speed; i++) {
+    if (state.subdivisionQueue.length === 0) break;
+    const index = state.subdivisionQueue.shift();
+    if (index === undefined) break;
+    state.activeSubdivisionIndex = index;
+    subdivideShape(index);
+    state.processedShapeIndices.add(index);
+  }
+  if (state.subdivisionQueue.length === 0) {
+    state.activeSubdivisionIndex = null;
+    finalizeSubdivision();
+    engine.stopLoop();
+  }
+  state.iteration++;
+  engine.notify();
+}
+
+function subdivisionStep(): void {
+  if (state.subdivisionQueue.length === 0) return;
+  const index = state.subdivisionQueue.shift();
+  if (index === undefined) return;
+  state.activeSubdivisionIndex = index;
+  subdivideShape(index);
+  state.processedShapeIndices.add(index);
+  if (state.subdivisionQueue.length === 0) {
+    state.activeSubdivisionIndex = null;
+    finalizeSubdivision();
+    engine.stopLoop();
+  }
+  state.iteration++;
+  engine.notify();
+}
+
+function subdivisionResolve(): void {
+  while (state.subdivisionQueue.length > 0) {
+    const index = state.subdivisionQueue.shift();
+    if (index !== undefined) {
+      state.activeSubdivisionIndex = index;
+      subdivideShape(index);
+      state.processedShapeIndices.add(index);
+    }
+  }
+  state.activeSubdivisionIndex = null;
+  finalizeSubdivision();
+}
 
 /**
  * Prepares the state for the subdivision pass by identifying valid blocks and queuing them.

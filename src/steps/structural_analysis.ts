@@ -21,7 +21,6 @@ export const step: StepDefinition = {
     renderShorelines: true,
     renderElevation: false,
   },
-  phase: 'idle',
   hasSimControls: false,
   execute: () => {
     runStructuralAnalysis();

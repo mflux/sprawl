@@ -1,5 +1,4 @@
 import { VisualizationSettings } from '../types';
-import { EnginePhase } from '../state/engineTypes';
 
 /**
  * Defines everything about a simulation workflow step.
@@ -25,9 +24,6 @@ export interface StepDefinition {
   vizTransitions: Partial<VisualizationSettings>;
 
   // ── Runtime behavior ────────────────────────────────────────────
-
-  /** Which engine loop type this step uses. 'idle' for synchronous steps. */
-  phase: EnginePhase;
 
   /** Override simSpeed when this step starts. Undefined = no change. */
   initialSimSpeed?: number;

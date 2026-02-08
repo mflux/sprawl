@@ -28,7 +28,7 @@ export const GenerationView: React.FC = () => {
     if (!stepDef) return;
 
     // Resolve any in-progress simulation before transitioning
-    engine.cleanupCurrentPhase();
+    engine.cleanup();
 
     setActiveStep(stepNum);
 

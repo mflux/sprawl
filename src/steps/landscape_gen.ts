@@ -19,7 +19,6 @@ export const step: StepDefinition = {
     renderFlowField: false,
     renderHubs: true,
   },
-  phase: 'landscape',
   hasSimControls: false,
   canReset: true,
   execute: () => { runLandscapeGen(); },

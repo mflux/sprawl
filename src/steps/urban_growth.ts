@@ -4,7 +4,15 @@ import { Vector2D } from '../modules/Vector2D';
 import { Ant } from '../modules/Ant';
 import { Hub } from '../modules/Hub';
 import { RoadPath } from '../modules/RoadPath';
+import { RoadNetwork } from '../modules/RoadNetwork';
+import { profile } from '../utils/Profiler';
+import {
+  processAnt, checkCollisions,
+  syncRoadGrid, syncAntGrid, resetSpatialGrids,
+} from './antHelpers';
 import type { StepDefinition } from './types';
+
+let _cooldown = 0;
 
 export const step: StepDefinition = {
   id: 'urban_growth',
@@ -15,16 +23,103 @@ export const step: StepDefinition = {
     renderFlowField: true,
     renderHubs: false,
   },
-  phase: 'ant_simulation',
   initialSimSpeed: 12,
   hasSimControls: true,
   execute: () => {
     runUrbanGrowth();
+    _cooldown = 0;
     engine.tick();
-    engine.startPhase('ant_simulation');
+    engine.runLoop({
+      onTick: antTick,
+      onStep: antStep,
+      onResolve: antResolve,
+      intervalMs: 16,
+    });
   },
   isComplete: () => state.currentWave >= state.settings.antWaves && !state.ants.some((a) => a.isAlive),
 };
+
+function antTick(): void {
+  if (_cooldown > 0) { _cooldown--; return; }
+  syncRoadGrid();
+  syncAntGrid();
+  let anyAlive = false;
+  const stepsPerFrame = Math.max(1, state.settings.simSpeed);
+  for (let i = 0; i < stepsPerFrame; i++) {
+    if (stepsPerFrame > 5 && i % 2 === 0) syncAntGrid();
+    for (let j = 0; j < state.ants.length; j++) {
+      const ant = state.ants[j];
+      if (ant.isAlive) { processAnt(ant); if (ant.isAlive) anyAlive = true; }
+    }
+    checkCollisions();
+    if (!anyAlive) break;
+  }
+
+  if (!anyAlive && state.ants.length > 0) {
+    if (state.currentWave > 0 && state.currentWave < state.settings.antWaves) {
+      _cooldown = 1;
+      state.currentWave++;
+      profile('WaveTransition.spawnNextWave', () => spawnAntWave());
+    } else {
+      resetSpatialGrids();
+      const currentSnap = state.ants.some((a) => a.parentShape) ? state.settings.antSubdivideSnap : state.settings.cleanupSnap;
+      profile('RoadNetwork.cleanupWaveEnd', () => {
+        state.roads = RoadNetwork.cleanupNetwork(state.roads, currentSnap);
+      });
+      engine.stopLoop();
+    }
+  }
+  state.iteration++;
+  engine.notify();
+}
+
+function antStep(): void {
+  profile('Simulation.stepBulk', () => {
+    syncRoadGrid();
+    syncAntGrid();
+    const steps = 10 * Math.max(1, state.settings.simSpeed);
+    for (let i = 0; i < steps; i++) {
+      let anyAlive = false;
+      if (i % 5 === 0) syncAntGrid();
+      for (let j = 0; j < state.ants.length; j++) {
+        const ant = state.ants[j];
+        if (ant.isAlive) { processAnt(ant); if (ant.isAlive) anyAlive = true; }
+      }
+      checkCollisions();
+      if (!anyAlive && state.ants.length > 0) break;
+    }
+  });
+  state.iteration++;
+  engine.notify();
+}
+
+function antResolve(): void {
+  resetSpatialGrids();
+  profile('Simulation.resolveInstant', () => {
+    let anyAlive = true;
+    let safetyCounter = 0;
+    while (anyAlive && safetyCounter < 5000) {
+      syncRoadGrid();
+      syncAntGrid();
+      anyAlive = false;
+      for (let j = 0; j < state.ants.length; j++) {
+        const ant = state.ants[j];
+        if (ant.isAlive) { processAnt(ant); if (ant.isAlive) anyAlive = true; }
+      }
+      checkCollisions();
+      if (!anyAlive && state.currentWave > 0 && state.currentWave < state.settings.antWaves) {
+        state.currentWave++;
+        spawnAntWave();
+        anyAlive = true;
+      }
+      safetyCounter++;
+    }
+  });
+  const currentSnap = state.ants.some((a) => a.parentShape) ? state.settings.antSubdivideSnap : state.settings.cleanupSnap;
+  profile('RoadNetwork.cleanupFinal', () => {
+    state.roads = RoadNetwork.cleanupNetwork(state.roads, currentSnap);
+  });
+}
 
 const getAvailableVertex = (hub: Hub): Vector2D | null => {
   const availableIndices = hub.shapePoints

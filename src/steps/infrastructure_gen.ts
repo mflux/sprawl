@@ -1,7 +1,10 @@
-
-import engine, { state, getPhase } from '../state/engine';
+import engine, { state } from '../state/engine';
 import { Vector2D } from '../modules/Vector2D';
 import { Hub } from '../modules/Hub';
+import { RoadNetwork } from '../modules/RoadNetwork';
+import { TerrainCulling } from '../modules/TerrainCulling';
+import { ShapeDetector } from '../modules/ShapeDetector';
+import { ArterialDetector } from '../modules/ArterialDetector';
 import type { StepDefinition } from './types';
 
 export const step: StepDefinition = {
@@ -13,15 +16,62 @@ export const step: StepDefinition = {
     renderElevation: false,
     renderShorelines: true,
   },
-  phase: 'hub_animation',
   hasSimControls: false,
   execute: () => {
     runInfrastructureGen();
+    placeAllHubs();
+    finishHubPhase();
     engine.tick();
-    engine.startPhase('hub_animation');
   },
-  isComplete: () => state.hubQueue.length === 0 && getPhase() !== 'hub_animation',
+  isComplete: () => true,
 };
+
+/**
+ * Drain hubQueue into state.hubs with staggered spawnTimes for animation,
+ * add road segments and geography metadata.
+ */
+function placeAllHubs(): void {
+  const now = Date.now();
+  let i = 0;
+  while (state.hubQueue.length > 0) {
+    const hub = state.hubQueue.shift();
+    if (!hub) continue;
+    hub.spawnTime = now + i * 300;
+    state.hubs.push(hub);
+    const pts = hub.shapePoints;
+    for (let v = 0; v < pts.length; v++) {
+      RoadNetwork.addSegmentSnapped(pts[v], pts[(v + 1) % pts.length], state.roads, 5);
+    }
+    let minDist = Infinity;
+    state.shorelines.forEach((s) => {
+      const cp = s.closestPoint(hub.position);
+      const d = hub.position.dist(cp);
+      if (d < minDist) minDist = d;
+    });
+    state.geography.hubs.push({
+      id: hub.id,
+      position: { x: hub.position.x, y: hub.position.y },
+      size: hub.size,
+      tier: hub.tier,
+      distToWater: minDist,
+    });
+    i++;
+  }
+}
+
+/**
+ * Post-hub terrain culling, shape detection, and arterial detection.
+ */
+function finishHubPhase(): void {
+  if (state.elevation) {
+    state.roads = TerrainCulling.cullSegments(state.roads, state.elevation, state.settings.terrainWaterLevel);
+  }
+  const detectedShapes = ShapeDetector.detectShapes(state.roads);
+  state.shapes = detectedShapes;
+  if (detectedShapes.length > 0) {
+    state.arterials = ArterialDetector.detectArterialsFromShapes(detectedShapes, 45);
+  }
+}
 
 /**
  * Infrastructure Placement: Hubs and Exits.

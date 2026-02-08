@@ -14,15 +14,43 @@ export const step: StepDefinition = {
   vizTransitions: {
     renderTraffic: true,
   },
-  phase: 'traffic',
   initialSimSpeed: 2,
   hasSimControls: true,
   forceRoadBake: true,
   execute: () => {
-    engine.startPhase('traffic');
+    engine.runLoop({
+      onTick: trafficTick,
+      onStep: trafficStep,
+      onResolve: trafficResolve,
+      intervalMs: 60,
+    });
   },
   isComplete: () => state.usageCount >= state.settings.maxTrafficTrips,
 };
+
+function trafficTick(): void {
+  const speed = Math.max(1, state.settings.simSpeed);
+  let more = true;
+  for (let i = 0; i < speed; i++) {
+    more = runTrafficSimulation();
+    if (!more) break;
+  }
+  if (!more) {
+    engine.stopLoop();
+  }
+  state.iteration++;
+  engine.notify();
+}
+
+function trafficStep(): void {
+  runTrafficSimulation();
+  state.iteration++;
+  engine.notify();
+}
+
+function trafficResolve(): void {
+  while (runTrafficSimulation()) { /* run to completion */ }
+}
 
 /**
  * Road Usage Simulation: Picks trips and records segment usage.
