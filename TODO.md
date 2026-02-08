@@ -4,7 +4,7 @@
 
 ### 6. `setInterval` Game Loops Instead of `requestAnimationFrame`
 
-Multiple `setInterval` calls at 16ms drive the simulation, hub animation, subdivision, and traffic steps in `engine.ts`. `setInterval` doesn't sync with the browser's repaint cycle, can stack callbacks if a tick runs long, and wastes cycles when the tab is backgrounded.
+The generic loop runner in `engine.ts` still uses `setInterval`. It doesn't sync with the browser's repaint cycle, can stack callbacks if a tick runs long, and wastes cycles when the tab is backgrounded.
 
 **Fix:** Use `requestAnimationFrame` for anything that drives visual updates. Accumulate delta-time for simulation steps at a fixed timestep. For purely computational work, consider offloading to a web worker.
 
@@ -15,14 +15,6 @@ Multiple `setInterval` calls at 16ms drive the simulation, hub animation, subdiv
 `GenerationCanvas/index.tsx` still contains the p5 sketch lifecycle, elevation baking dispatch, 6+ graphics buffer caches, mouse/touch/pinch handlers, zoom/pan transform, and the full render loop — all in one component.
 
 **Fix:** Extract input handling (pan/zoom/pinch) into its own module. Consider extracting the bake-cache management (flow, shoreline, shapes, arterials, roads) into a dedicated hook or class.
-
----
-
-### 10. `engine.ts` Is Large (~830 lines)
-
-The engine absorbed all simulation logic from `useSimulation.ts` and orchestration from `GenerationView`. While this is architecturally correct (simulation lives outside React), the file itself covers spatial grids, ant physics, collision detection, road intersection, boundary clipping, wave management, phase loops, and public controls.
-
-**Fix:** Extract ant simulation helpers (processAnt, checkCollisions, findRoadIntersection, etc.) into a separate `src/simulation/antPhysics.ts` module. Extract the spatial grid sync logic. Keep engine.ts focused on phase orchestration and state management.
 
 ---
 
@@ -50,6 +42,9 @@ Vite's `define` config injects `GEMINI_API_KEY` as a string literal into the bui
 - ~~Global mutable state~~ — Migrated to Zustand (UI state with persist) + standalone Simulation Engine (mutable game state + phase orchestration). Deleted `store.ts` and `useSimulation.ts`. All components, steps, and canvas updated.
 - ~~Duplicated hub resolution logic~~ — Consolidated into `engine.ts`
 - ~~Monolithic `useSimulation` hook (406 lines)~~ — Absorbed into `engine.ts`
-- ~~`GenerationView` orchestration (351 lines)~~ — Reduced to ~190 lines; loops moved to engine
+- ~~`GenerationView` orchestration (351 lines)~~ — Reduced to ~150 lines; step execution driven by registry
 - ~~Web worker as 100-line inline string~~ — Extracted to typed `elevation.worker.ts` with Vite native worker import, `useElevationWorkers` hook manages pool lifecycle. Canvas shrunk from 492 to 378 lines.
 - ~~Confusing barrel files~~ — Replaced `GenerationView.tsx` / `GenerationCanvas.tsx` barrel files with standard `index.tsx` convention
+- ~~Hardcoded step logic scattered across engine/view/canvas~~ — Inversion of control: each step exports a `StepDefinition` with its own metadata, `execute()`, and `isComplete()`. Central registry in `steps/registry.ts` replaces all step-number conditionals.
+- ~~`engine.ts` is large (~830 lines) with phase-specific logic~~ — Rewritten as a ~220-line generic loop runner. Ant helpers extracted to `steps/antHelpers.ts`. `EnginePhase` type and all phase-dispatching switch statements removed. Steps own their own tick/resolve/step callbacks via `engine.runLoop()`.
+- ~~Infrastructure step used animated loop~~ — Made fully synchronous; all hubs placed instantly with staggered `spawnTime` for visual animation in the renderer.
