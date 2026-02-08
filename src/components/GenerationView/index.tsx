@@ -1,47 +1,19 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { GenerationCanvas } from '../GenerationCanvas';
-import engine, { EnginePhase } from '../../state/engine';
+import engine from '../../state/engine';
 import { useUIStore } from '../../state/uiStore';
 import { VisualizationSettings } from '../../types';
-import { stepInfo as step1Info } from '../../steps/landscape_gen';
-import { stepInfo as step2Info } from '../../steps/infrastructure_gen';
-import { stepInfo as step3Info } from '../../steps/urban_growth';
-import { stepInfo as step4Info } from '../../steps/structural_analysis';
-import { stepInfo as step5Info } from '../../steps/block_subdivision';
-import { stepInfo as step6Info } from '../../steps/traffic_simulation';
-import { stepInfo as step7Info } from '../../steps/ai_naming';
+import { STEPS, STEP_COUNT } from '../../steps/registry';
 import { ControlCenter } from './ControlCenter';
 import { WorkflowDock } from './WorkflowDock';
 import { ProfilingWindow } from './ProfilingWindow';
 import { RenderProfiler } from './RenderProfiler';
 
-const STEP_INFO_MAP: Record<number, { title: string; desc: string; vizTransitions: Partial<VisualizationSettings> }> = {
-  1: step1Info,
-  2: step2Info,
-  3: step3Info,
-  4: step4Info,
-  5: step5Info,
-  6: step6Info,
-  7: step7Info,
-};
-
-/** Map workflow step number → engine phase */
-const STEP_TO_PHASE: Record<number, EnginePhase> = {
-  1: 'landscape',
-  2: 'hub_animation',
-  3: 'ant_simulation',
-  4: 'idle',        // structural analysis is synchronous
-  5: 'subdivision',
-  6: 'traffic',
-  7: 'naming',
-};
-
 export const GenerationView: React.FC = () => {
   const activeStep = useUIStore((s) => s.activeStep);
   const setActiveStep = useUIStore((s) => s.setActiveStep);
   const settings = useUIStore((s) => s.settings);
-  // vizSettings is accessed via engine.state.visualizationSettings in the canvas
   const updateSetting = useUIStore((s) => s.updateSetting);
   const updateVizSetting = useUIStore((s) => s.updateVizSetting);
 
@@ -50,41 +22,40 @@ export const GenerationView: React.FC = () => {
 
   const [isGeneratingLandscape, setIsGeneratingLandscape] = useState(false);
 
-  const applyVizTransitions = useCallback((step: number) => {
-    const info = STEP_INFO_MAP[step];
-    if (info?.vizTransitions) {
-      const transitions = info.vizTransitions;
-      for (const [key, value] of Object.entries(transitions)) {
-        updateVizSetting(key as keyof VisualizationSettings, value as VisualizationSettings[keyof VisualizationSettings]);
-      }
+  /** Execute a step by its 1-based step number (STEPS index + 1). */
+  const executeStep = useCallback(async (stepNum: number) => {
+    const stepDef = STEPS[stepNum - 1];
+    if (!stepDef) return;
+
+    // Resolve any in-progress simulation before transitioning
+    engine.cleanupCurrentPhase();
+
+    setActiveStep(stepNum);
+
+    // Apply viz transitions
+    for (const [key, value] of Object.entries(stepDef.vizTransitions)) {
+      updateVizSetting(
+        key as keyof VisualizationSettings,
+        value as VisualizationSettings[keyof VisualizationSettings],
+      );
     }
-  }, [updateVizSetting]);
 
-  const executeStep = useCallback(async (step: number) => {
-    setActiveStep(step);
-    applyVizTransitions(step);
+    // Apply initial sim speed if defined
+    if (stepDef.initialSimSpeed !== undefined) {
+      updateSetting('simSpeed', stepDef.initialSimSpeed);
+    }
 
-    const phase = STEP_TO_PHASE[step];
-    if (!phase) return;
-
-    if (step === 1) {
+    // Show landscape spinner for reset-capable steps
+    if (stepDef.canReset) {
       setIsGeneratingLandscape(true);
-      await engine.executePhase('landscape');
-      setIsGeneratingLandscape(false);
-    } else if (step === 3) {
-      // Set speed before starting ant simulation
-      updateSetting('simSpeed', 12);
-      await engine.executePhase(phase);
-    } else if (step === 5) {
-      updateSetting('simSpeed', 1);
-      await engine.executePhase(phase);
-    } else if (step === 6) {
-      updateSetting('simSpeed', 2);
-      await engine.executePhase(phase);
-    } else {
-      await engine.executePhase(phase);
     }
-  }, [setActiveStep, applyVizTransitions, updateSetting]);
+
+    await stepDef.execute();
+
+    if (stepDef.canReset) {
+      setIsGeneratingLandscape(false);
+    }
+  }, [setActiveStep, updateVizSetting, updateSetting]);
 
   // Auto-start step 1 on mount
   useEffect(() => {
@@ -116,24 +87,17 @@ export const GenerationView: React.FC = () => {
   const phase = engine.getPhase();
   const running = engine.isRunning();
 
-  const isStep2Done = activeStep === 2 && s.hubQueue.length === 0 && phase !== 'hub_animation';
-  const isStep3Done = activeStep === 3 && s.currentWave >= settings.antWaves && !s.ants.some((a) => a.isAlive);
-  const isStep5Done = activeStep === 5 && s.subdivisionQueue.length === 0 && phase !== 'subdivision';
-  const isStep6Done = activeStep === 6 && s.usageCount >= settings.maxTrafficTrips;
-
-  let showSimulationControls = false;
-  if (activeStep === 3) showSimulationControls = !isStep3Done;
-  else if (activeStep === 5) showSimulationControls = !isStep5Done;
-  else if (activeStep === 6) showSimulationControls = !isStep6Done;
+  // Current step completion and controls — driven by the step definition
+  const currentDef = activeStep >= 1 ? STEPS[activeStep - 1] : null;
+  const isCurrentComplete = currentDef ? currentDef.isComplete() : true;
+  const showSimulationControls = !!currentDef?.hasSimControls && !isCurrentComplete;
 
   let nextStepToExecute: number | null = null;
-  if (activeStep === 0) nextStepToExecute = 1;
-  else if (activeStep === 1) nextStepToExecute = 2;
-  else if (activeStep === 2 && isStep2Done) nextStepToExecute = 3;
-  else if (activeStep === 3 && isStep3Done) nextStepToExecute = 4;
-  else if (activeStep === 4) nextStepToExecute = 5;
-  else if (activeStep === 5 && isStep5Done) nextStepToExecute = 6;
-  else if (activeStep === 6 && isStep6Done) nextStepToExecute = 7;
+  if (activeStep === 0) {
+    nextStepToExecute = 1;
+  } else if (isCurrentComplete && activeStep < STEP_COUNT) {
+    nextStepToExecute = activeStep + 1;
+  }
 
   return (
     <div className="w-full h-screen relative bg-slate-950">

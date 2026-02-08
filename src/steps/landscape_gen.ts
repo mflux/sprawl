@@ -5,17 +5,25 @@ import { ElevationMap } from '../modules/ElevationMap';
 import { ShorelineDetector } from '../modules/ShorelineDetector';
 import { RiverGenerator } from '../modules/RiverGenerator';
 import { River } from '../modules/River';
-import { WaterBodyMetadata, VisualizationSettings } from '../types';
+import { WaterBodyMetadata } from '../types';
+import type { StepDefinition } from './types';
 
-export const stepInfo: { title: string, desc: string, vizTransitions: Partial<VisualizationSettings> } = {
-  title: "Landscape Synthesis",
-  desc: "Hard resets state. Generates noise-based topography, carves hydraulic riverbeds, and initializes the topography-aware vector flow field.",
+export const step: StepDefinition = {
+  id: 'landscape',
+  label: 'Geo',
+  title: 'Landscape Synthesis',
+  desc: 'Hard resets state. Generates noise-based topography, carves hydraulic riverbeds, and initializes the topography-aware vector flow field.',
   vizTransitions: {
     renderElevation: true,
     renderShorelines: false,
     renderFlowField: false,
-    renderHubs: true
-  }
+    renderHubs: true,
+  },
+  phase: 'landscape',
+  hasSimControls: false,
+  canReset: true,
+  execute: () => { runLandscapeGen(); },
+  isComplete: () => true,
 };
 
 /**

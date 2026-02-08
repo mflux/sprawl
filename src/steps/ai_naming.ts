@@ -1,17 +1,29 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { state, addEvent } from '../state/engine';
+import engine, { state, addEvent } from '../state/engine';
 import { profile } from '../utils/Profiler';
 import { Vector2D } from '../modules/Vector2D';
-import { VisualizationSettings } from "../types";
 import { LabelRelaxer, Label } from "../modules/LabelRelaxer";
+import type { StepDefinition } from './types';
 
-export const stepInfo: { title: string, desc: string, vizTransitions: Partial<VisualizationSettings> } = {
-  title: "AI Toponymy",
-  desc: "Transmits geographic metadata with normalized coordinates to Gemini to generate grounded names. Allows the AI to apply cardinal prefixes (North, South, etc.) selectively based on spatial context.",
+export const step: StepDefinition = {
+  id: 'ai_naming',
+  label: 'Names',
+  title: 'AI Toponymy',
+  desc: 'Transmits geographic metadata with normalized coordinates to Gemini to generate grounded names. Allows the AI to apply cardinal prefixes (North, South, etc.) selectively based on spatial context.',
   vizTransitions: {
     renderElevation: true,
-    renderShorelines: false
-  }
+    renderShorelines: false,
+  },
+  phase: 'naming',
+  hasSimControls: false,
+  highResElevation: true,
+  execute: async () => {
+    engine.setPhase('naming', true);
+    await runAINaming();
+    engine.setPhase('idle');
+    engine.tick();
+  },
+  isComplete: () => true,
 };
 
 /**

@@ -5,6 +5,7 @@ import * as Drawers from './drawers';
 import { Vector2D } from '../../modules/Vector2D';
 import { useElevationWorkers } from './useElevationWorkers';
 import type { ElevationChunkJob, ElevationChunkResult } from '../../workers/elevation.types';
+import { STEPS } from '../../steps/registry';
 
 import p5 from 'p5';
 
@@ -139,8 +140,8 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ activeStep }
           maxX: (p.width - offset.x) / scale + padding, maxY: (p.height - offset.y) / scale + padding
         };
 
-        const isFinalStep = curStep === 7;
-        const baseRes = isFinalStep ? 1.5 : 3.0;
+        const curStepDef = curStep >= 1 ? STEPS[curStep - 1] : undefined;
+        const baseRes = curStepDef?.highResElevation ? 1.5 : 3.0;
         const targetRes = IS_MOBILE ? baseRes * 2 : baseRes;
         const resChanged = Math.abs(targetRes - lastElevationResRef.current) > 0.01;
 
@@ -223,7 +224,7 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ activeStep }
 
         if (s.roads.length > 0 && s.roads.length !== lastRoadsCountRef.current) {
            if (!roadsGraphicsRef.current) roadsGraphicsRef.current = p.createGraphics(s.simWidth, s.simHeight);
-           if (s.roads.length - lastRoadsCountRef.current > 100 || curStep >= 6) {
+           if (s.roads.length - lastRoadsCountRef.current > 100 || curStepDef?.forceRoadBake) {
               const bakeStart = performance.now();
               Drawers.bakeRoads(p, roadsGraphicsRef.current, s.roads, viz);
               lastRoadsCountRef.current = s.roads.length;

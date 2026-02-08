@@ -1,4 +1,4 @@
-import { state, addEvent } from '../state/engine';
+import engine, { state, addEvent, getPhase } from '../state/engine';
 import { TransposeGrid } from '../modules/TransposeGrid';
 import { ArterialDetector } from '../modules/ArterialDetector';
 import { RoadNetwork } from '../modules/RoadNetwork';
@@ -7,12 +7,23 @@ import { Vector2D } from '../modules/Vector2D';
 import { Path2D } from '../modules/Path2D';
 import { getPathBounds } from '../modules/Culling';
 import { ShapeSpatialGrid } from '../modules/ShapeSpatialGrid';
-import { VisualizationSettings } from '../types';
+import type { StepDefinition } from './types';
 
-export const stepInfo: { title: string, desc: string, vizTransitions: Partial<VisualizationSettings> } = {
-  title: "Block Subdivision",
-  desc: "Refines blocks with internal streets. Uses a Transpose Grid approach aligned to the longest arterial in each block.",
-  vizTransitions: {}
+export const step: StepDefinition = {
+  id: 'block_subdivision',
+  label: 'Subdiv',
+  title: 'Block Subdivision',
+  desc: 'Refines blocks with internal streets. Uses a Transpose Grid approach aligned to the longest arterial in each block.',
+  vizTransitions: {},
+  phase: 'subdivision',
+  initialSimSpeed: 1,
+  hasSimControls: true,
+  execute: () => {
+    prepareSubdivision();
+    engine.tick();
+    engine.startPhase('subdivision');
+  },
+  isComplete: () => state.subdivisionQueue.length === 0 && getPhase() !== 'subdivision',
 };
 
 /**

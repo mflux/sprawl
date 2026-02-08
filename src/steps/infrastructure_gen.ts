@@ -1,16 +1,26 @@
 
-import { state } from '../state/engine';
+import engine, { state, getPhase } from '../state/engine';
 import { Vector2D } from '../modules/Vector2D';
 import { Hub } from '../modules/Hub';
-import { VisualizationSettings } from '../types';
+import type { StepDefinition } from './types';
 
-export const stepInfo: { title: string, desc: string, vizTransitions: Partial<VisualizationSettings> } = {
-  title: "Infrastructure Seating",
-  desc: "Analyzes terrain height to seat urban hubs and boundary transit exits. Hubs appear sequentially from primary Tier 1 centers down to local hubs.",
+export const step: StepDefinition = {
+  id: 'infrastructure',
+  label: 'Hubs',
+  title: 'Infrastructure Seating',
+  desc: 'Analyzes terrain height to seat urban hubs and boundary transit exits. Hubs appear sequentially from primary Tier 1 centers down to local hubs.',
   vizTransitions: {
     renderElevation: false,
-    renderShorelines: true
-  }
+    renderShorelines: true,
+  },
+  phase: 'hub_animation',
+  hasSimControls: false,
+  execute: () => {
+    runInfrastructureGen();
+    engine.tick();
+    engine.startPhase('hub_animation');
+  },
+  isComplete: () => state.hubQueue.length === 0 && getPhase() !== 'hub_animation',
 };
 
 /**

@@ -1,18 +1,29 @@
 
-import { state, addEvent } from '../state/engine';
+import engine, { state, addEvent } from '../state/engine';
 import { Vector2D } from '../modules/Vector2D';
 import { Ant } from '../modules/Ant';
 import { Hub } from '../modules/Hub';
 import { RoadPath } from '../modules/RoadPath';
-import { VisualizationSettings } from '../types';
+import type { StepDefinition } from './types';
 
-export const stepInfo: { title: string, desc: string, vizTransitions: Partial<VisualizationSettings> } = {
-  title: "Urban Growth Simulation",
-  desc: "Dispatches steering agents. Multi-agent logic evolves roads via target-seeking, collision physics, and structural bridge building across water.",
+export const step: StepDefinition = {
+  id: 'urban_growth',
+  label: 'Ants',
+  title: 'Urban Growth Simulation',
+  desc: 'Dispatches steering agents. Multi-agent logic evolves roads via target-seeking, collision physics, and structural bridge building across water.',
   vizTransitions: {
     renderFlowField: true,
-    renderHubs: false
-  }
+    renderHubs: false,
+  },
+  phase: 'ant_simulation',
+  initialSimSpeed: 12,
+  hasSimControls: true,
+  execute: () => {
+    runUrbanGrowth();
+    engine.tick();
+    engine.startPhase('ant_simulation');
+  },
+  isComplete: () => state.currentWave >= state.settings.antWaves && !state.ants.some((a) => a.isAlive),
 };
 
 const getAvailableVertex = (hub: Hub): Vector2D | null => {

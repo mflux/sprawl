@@ -28,14 +28,10 @@ import { TerrainCulling } from '../modules/TerrainCulling';
 import { ShapeDetector } from '../modules/ShapeDetector';
 import { ArterialDetector } from '../modules/ArterialDetector';
 
-// Re-export step functions so GenerationView can use them
-import { runLandscapeGen } from '../steps/landscape_gen';
-import { runInfrastructureGen } from '../steps/infrastructure_gen';
-import { runUrbanGrowth, spawnAntWave } from '../steps/urban_growth';
-import { runStructuralAnalysis } from '../steps/structural_analysis';
-import { prepareSubdivision, subdivideShape, finalizeSubdivision } from '../steps/block_subdivision';
+// Step loop internals still need these imports (called from engine loops)
+import { spawnAntWave } from '../steps/urban_growth';
+import { subdivideShape, finalizeSubdivision } from '../steps/block_subdivision';
 import { runTrafficSimulation } from '../steps/traffic_simulation';
-import { runAINaming } from '../steps/ai_naming';
 import { profile } from '../utils/Profiler';
 
 // ── Defaults (for initial settings before Zustand hydrates) ───────────
@@ -57,14 +53,8 @@ function notify(): void {
 
 // ── Engine phase ──────────────────────────────────────────────────────
 
-export type EnginePhase =
-  | 'idle'
-  | 'landscape'
-  | 'hub_animation'
-  | 'ant_simulation'
-  | 'subdivision'
-  | 'traffic'
-  | 'naming';
+export type { EnginePhase } from './engineTypes';
+import type { EnginePhase } from './engineTypes';
 
 // ── Simulation state ──────────────────────────────────────────────────
 
@@ -692,82 +682,45 @@ function resolveTraffic(): void {
 // ── Public engine controls ────────────────────────────────────────────
 
 /**
- * Execute a workflow phase. Handles transition cleanup from prior phases.
- * Returns a promise only for the async naming phase.
+ * Clean up any running phase before transitioning to a new one.
+ * Called by step execute() functions before starting their work.
  */
-export async function executePhase(phase: EnginePhase): Promise<void> {
-  // Clean up current phase before starting a new one
+export function cleanupCurrentPhase(): void {
   if (currentPhase === 'hub_animation') resolveHubs();
   if (currentPhase === 'subdivision') resolveSubdivision();
   if (currentPhase === 'ant_simulation') resolveAntSimulation();
   if (currentPhase === 'traffic') resolveTraffic();
   clearLoop();
+}
 
+/**
+ * Set the engine phase and running state without starting a loop.
+ * Used by synchronous/async steps (landscape, structural analysis, naming).
+ */
+export function setPhase(phase: EnginePhase, running = false): void {
+  currentPhase = phase;
+  _running = running;
+  notify();
+}
+
+/**
+ * Start the appropriate loop for the given phase.
+ * Called by step execute() functions after their setup work.
+ */
+export function startPhase(phase: EnginePhase): void {
   switch (phase) {
-    case 'landscape':
-      currentPhase = 'landscape';
-      _running = true;
-      notify();
-      // Run synchronously in a setTimeout to allow UI to show loading state
-      await new Promise<void>((resolve) => {
-        setTimeout(() => {
-          runLandscapeGen();
-          currentPhase = 'idle';
-          _running = false;
-          state.iteration++;
-          notify();
-          resolve();
-        }, 100);
-      });
-      break;
-
-    case 'hub_animation':
-      runInfrastructureGen();
-      state.iteration++;
-      startHubAnimationLoop();
-      notify();
-      break;
-
-    case 'ant_simulation':
-      state.settings.simSpeed = 12;
-      runUrbanGrowth();
-      state.iteration++;
-      startAntSimulationLoop();
-      notify();
-      break;
-
-    case 'idle': // Step 4: structural analysis (synchronous)
-      runStructuralAnalysis();
-      state.iteration++;
-      currentPhase = 'idle';
-      notify();
-      break;
-
-    case 'subdivision':
-      state.settings.simSpeed = 1;
-      prepareSubdivision();
-      state.iteration++;
-      startSubdivisionLoop();
-      notify();
-      break;
-
-    case 'traffic':
-      state.settings.simSpeed = 2;
-      startTrafficLoop();
-      notify();
-      break;
-
-    case 'naming':
-      currentPhase = 'naming';
-      _running = true;
-      notify();
-      await runAINaming();
-      currentPhase = 'idle';
-      _running = false;
-      state.iteration++;
-      notify();
-      break;
+    case 'hub_animation': startHubAnimationLoop(); notify(); break;
+    case 'ant_simulation': startAntSimulationLoop(); notify(); break;
+    case 'subdivision': startSubdivisionLoop(); notify(); break;
+    case 'traffic': startTrafficLoop(); notify(); break;
+    default: break;
   }
+}
+
+/** Bump the iteration counter and notify subscribers. */
+export function tick(): void {
+  state.iteration++;
+  notify();
 }
 
 /** Start / resume the current phase loop */
@@ -816,7 +769,10 @@ const engine = {
   notify,
   getPhase,
   isRunning,
-  executePhase,
+  cleanupCurrentPhase,
+  setPhase,
+  startPhase,
+  tick,
   start,
   pause,
   step,

@@ -1,23 +1,33 @@
 
-import { state, addEvent } from '../state/engine';
+import engine, { state, addEvent } from '../state/engine';
 import { ShapeDetector } from '../modules/ShapeDetector';
 import { ShapeMerger } from '../modules/ShapeMerger';
 import { ArterialDetector } from '../modules/ArterialDetector';
 import { TerrainCulling } from '../modules/TerrainCulling';
 import { Vector2D } from '../modules/Vector2D';
 import { profile } from '../utils/Profiler';
-import { NotableShapeMetadata, VisualizationSettings, BridgeMetadata } from '../types';
+import { NotableShapeMetadata, BridgeMetadata } from '../types';
 import { ShapeSpatialGrid } from '../modules/ShapeSpatialGrid';
 import { Segment2D } from '../modules/Segment2D';
+import type { StepDefinition } from './types';
 
-export const stepInfo: { title: string, desc: string, vizTransitions: Partial<VisualizationSettings> } = {
-  title: "Structural Discovery",
-  desc: "Runs graph-based shape detection to identify enclosed city blocks. Extracts bridge infrastructure from the network and identifies primary arterial axes.",
+export const step: StepDefinition = {
+  id: 'structural_analysis',
+  label: 'Shapes',
+  title: 'Structural Discovery',
+  desc: 'Runs graph-based shape detection to identify enclosed city blocks. Extracts bridge infrastructure from the network and identifies primary arterial axes.',
   vizTransitions: {
     renderFlowField: false,
     renderShorelines: true,
-    renderElevation: false
-  }
+    renderElevation: false,
+  },
+  phase: 'idle',
+  hasSimControls: false,
+  execute: () => {
+    runStructuralAnalysis();
+    engine.tick();
+  },
+  isComplete: () => true,
 };
 
 /**

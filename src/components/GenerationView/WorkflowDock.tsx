@@ -1,12 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { stepInfo as step1Info } from '../../steps/landscape_gen';
-import { stepInfo as step2Info } from '../../steps/infrastructure_gen';
-import { stepInfo as step3Info } from '../../steps/urban_growth';
-import { stepInfo as step4Info } from '../../steps/structural_analysis';
-import { stepInfo as step5Info } from '../../steps/block_subdivision';
-import { stepInfo as step6Info } from '../../steps/traffic_simulation';
-import { stepInfo as step7Info } from '../../steps/ai_naming';
+import { STEPS } from '../../steps/registry';
 
 interface WorkflowDockProps {
   onExecuteStep: (step: number) => void;
@@ -20,16 +14,6 @@ interface WorkflowDockProps {
   showSimulationControls: boolean;
   nextStepToExecute: number | null;
 }
-
-const STEP_INFO_MAP: Record<number, { title: string, desc: string }> = {
-  1: step1Info,
-  2: step2Info,
-  3: step3Info,
-  4: step4Info,
-  5: step5Info,
-  6: step6Info,
-  7: step7Info
-};
 
 const RESET_INFO = {
   title: "Reset Environment",
@@ -128,46 +112,34 @@ export const WorkflowDock: React.FC<WorkflowDockProps> = ({
       <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-slate-900/40 border border-white/5 rounded-full backdrop-blur-xl shadow-2xl">
         <div className="hidden sm:block px-5 text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 border-r border-white/10 mr-1 py-1 whitespace-nowrap">Workflow</div>
         
-        {[1, 2, 3, 4, 5, 6, 7].map(step => {
-          const isResetMode = step === 1 && activeStep > 1;
-          const isCurrent = activeStep === step;
-          const isBackwards = step < activeStep && step !== 1;
-          const isSkipping = step > activeStep + 1;
-          const isNext = nextStepToExecute === step;
+        {STEPS.map((stepDef, index) => {
+          const stepNum = index + 1;
+          const isResetMode = !!stepDef.canReset && activeStep > stepNum;
+          const isCurrent = activeStep === stepNum;
+          const isBackwards = stepNum < activeStep && !stepDef.canReset;
+          const isSkipping = stepNum > activeStep + 1;
+          const isNext = nextStepToExecute === stepNum;
           const isStepSimulating = isCurrent && isSimulating;
           
-          const isInteractionDisabled = step !== 1 && (isCurrent || isBackwards || isSkipping);
+          const isInteractionDisabled = !stepDef.canReset && (isCurrent || isBackwards || isSkipping);
 
-          const getLabel = () => {
-            if (isResetMode) return 'Reset';
-            switch(step) {
-              case 1: return 'Geo';
-              case 2: return 'Hubs';
-              case 3: return 'Ants';
-              case 4: return 'Shapes';
-              case 5: return 'Subdiv';
-              case 6: return 'Traffic';
-              case 7: return 'Names';
-              default: return '';
-            }
-          };
-
-          const isHovered = hoveredStep === step;
+          const label = isResetMode ? 'Reset' : stepDef.label;
+          const isHovered = hoveredStep === stepNum;
 
           return (
-            <div key={step} className="relative">
-              {isHovered && (STEP_INFO_MAP[step] || (step === 1 && activeStep > 1)) && (
+            <div key={stepDef.id} className="relative">
+              {isHovered && (
                 <div className="absolute bottom-[calc(100%+12px)] left-1/2 -translate-x-1/2 flex flex-col items-center w-[200px] sm:w-[240px] pointer-events-none animate-in fade-in slide-in-from-bottom-2 duration-200">
                   <div className="bg-slate-900/95 border border-cyan-500/30 p-2 sm:p-3 rounded-xl backdrop-blur-xl shadow-2xl">
                      <div className="text-cyan-400 text-[8px] sm:text-[10px] font-black uppercase tracking-widest mb-1">
-                       {step === 1 && activeStep > 1 
+                       {isResetMode 
                          ? RESET_INFO.title 
-                         : `Step ${step}: ${STEP_INFO_MAP[step].title}`}
+                         : `Step ${stepNum}: ${stepDef.title}`}
                      </div>
                      <div className="text-slate-300 text-[8px] sm:text-[10px] leading-relaxed font-medium">
-                       {step === 1 && activeStep > 1 
+                       {isResetMode 
                          ? RESET_INFO.desc 
-                         : STEP_INFO_MAP[step].desc}
+                         : stepDef.desc}
                      </div>
                   </div>
                   <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-slate-900 shadow-xl" />
@@ -179,8 +151,8 @@ export const WorkflowDock: React.FC<WorkflowDockProps> = ({
               )}
 
               <button
-                onClick={() => !isInteractionDisabled && onExecuteStep(step)}
-                onMouseEnter={() => setHoveredStep(step)}
+                onClick={() => !isInteractionDisabled && onExecuteStep(stepNum)}
+                onMouseEnter={() => setHoveredStep(stepNum)}
                 onMouseLeave={() => setHoveredStep(null)}
                 className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full flex flex-col items-center justify-center transition-all duration-300 border
                   ${isCurrent ? 'ring-1 sm:ring-2 ring-cyan-500 bg-cyan-900/40 border-cyan-500/50' : 'bg-slate-800/80 border-white/5'}
@@ -191,10 +163,10 @@ export const WorkflowDock: React.FC<WorkflowDockProps> = ({
                 `}
               >
                 <span className="text-[10px] sm:text-xs font-black">
-                  {isResetMode ? '↺' : step}
+                  {isResetMode ? '↺' : stepNum}
                 </span>
                 <span className="text-[5px] sm:text-[6px] uppercase font-bold tracking-tighter">
-                  {getLabel()}
+                  {label}
                 </span>
               </button>
             </div>

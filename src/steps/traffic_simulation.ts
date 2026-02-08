@@ -1,17 +1,27 @@
-import { state, addEvent } from '../state/engine';
+import engine, { state, addEvent } from '../state/engine';
 import { Vector2D } from '../modules/Vector2D';
 import { Pathfinder } from '../modules/Pathfinder';
 import { Hub } from '../modules/Hub';
 import { RoadNetwork } from '../modules/RoadNetwork';
 import { profile } from '../utils/Profiler';
-import { VisualizationSettings } from '../types';
+import type { StepDefinition } from './types';
 
-export const stepInfo: { title: string, desc: string, vizTransitions: Partial<VisualizationSettings> } = {
-  title: "Traffic Analysis",
-  desc: "Simulates thousands of A* pathfinding trips between hubs and exits to generate an infrastructure usage heatmap.",
+export const step: StepDefinition = {
+  id: 'traffic',
+  label: 'Traffic',
+  title: 'Traffic Analysis',
+  desc: 'Simulates thousands of A* pathfinding trips between hubs and exits to generate an infrastructure usage heatmap.',
   vizTransitions: {
-    renderTraffic: true
-  }
+    renderTraffic: true,
+  },
+  phase: 'traffic',
+  initialSimSpeed: 2,
+  hasSimControls: true,
+  forceRoadBake: true,
+  execute: () => {
+    engine.startPhase('traffic');
+  },
+  isComplete: () => state.usageCount >= state.settings.maxTrafficTrips,
 };
 
 /**
