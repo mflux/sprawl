@@ -18,29 +18,9 @@ This inverts React's entire model. You lose change detection, batched updates, c
 
 ---
 
-### 2. Broken / Phantom Imports
-
-`types.ts` has two broken imports:
-- `Shape2D` is imported from `'./Shape2D'` but the file lives at `./modules/Shape2D`
-- `Building` is imported from `'./modules/Building'` but `Building.ts` doesn't exist anywhere in the repo
-
-These are hallucinated imports from AI generation. The app compiles only because `noEmit: true` and Vite's bundler mode are lenient. Any stricter toolchain will reject these.
-
-**Fix:** Correct the `Shape2D` path. Remove the `Building` import and type (or create `Building.ts` if buildings are an intended feature).
-
----
-
-### 3. Import Maps Conflicting with Vite Bundler
-
-`index.html` has a `<script type="importmap">` that maps React, ReactDOM, and `@google/genai` to esm.sh CDN URLs. But these same packages are also in `package.json` for Vite to resolve from `node_modules`. This is contradictory — you either use import maps (no bundler) or Vite (no import maps). Having both risks duplicate React instances or unpredictable resolution behavior.
-
-**Fix:** Remove the import map from `index.html`. Let Vite resolve everything from `node_modules`.
-
----
-
 ## Critical: Dependencies & Build
 
-### 4. p5.js as an Untyped 1MB Global
+### 2. p5.js as an Untyped 1MB Global
 
 p5.js (~1.1 MB) is loaded via a CDN `<script>` tag and accessed through `declare const p5: any`. The entire rendering layer (the canvas component plus 20+ draw/bake modules) is completely untyped.
 
@@ -50,7 +30,7 @@ The actual p5 API surface used is tiny: `line()`, `ellipse()`, `stroke()`, `fill
 
 ---
 
-### 5. Tailwind CSS via Runtime CDN Script
+### 3. Tailwind CSS via Runtime CDN Script
 
 The Tailwind CDN script (`cdn.tailwindcss.com`) is explicitly documented as "for development only." It loads the full Tailwind runtime with zero tree-shaking or purging — meaning the entire CSS framework is parsed at runtime on every page load.
 
@@ -58,20 +38,19 @@ The Tailwind CDN script (`cdn.tailwindcss.com`) is explicitly documented as "for
 
 ---
 
-### 6. No Linter, No Formatter, No Strict TypeScript, No Test Runner
+### 4. No Linter, No Formatter, No Strict TypeScript
 
 - No ESLint or Prettier configuration
 - `tsconfig.json` has no `strict: true` — meaning no strict null checks, no implicit any errors, no unused variable detection
-- There are ~30 `.test.ts` files in `modules/` but no test runner in `package.json` (no vitest, no jest)
 - Many `any` types scattered throughout that would be caught with stricter settings
 
-**Fix:** Enable `strict: true` in tsconfig. Add ESLint + Prettier. Add Vitest (natural fit since Vite is already the bundler) and wire up the existing test files.
+**Fix:** Enable `strict: true` in tsconfig. Add ESLint + Prettier.
 
 ---
 
 ## High: Code Quality
 
-### 7. Web Worker Code as a 100-Line Inline String
+### 5. Web Worker Code as a 100-Line Inline String
 
 The elevation baking worker in `GenerationCanvas` is a ~100-line JavaScript string assigned to a constant. It contains a full Perlin noise implementation and terrain renderer. This string cannot be linted, type-checked, or debugged with source maps. It also duplicates the `SimpleNoise` class that already exists in `FlowField.ts`.
 
@@ -79,7 +58,7 @@ The elevation baking worker in `GenerationCanvas` is a ~100-line JavaScript stri
 
 ---
 
-### 8. `setInterval` Game Loops Instead of `requestAnimationFrame`
+### 6. `setInterval` Game Loops Instead of `requestAnimationFrame`
 
 Multiple `setInterval` calls at 16ms drive the simulation, hub animation, subdivision, and traffic steps. `setInterval` doesn't sync with the browser's repaint cycle, can stack callbacks if a tick runs long, and wastes cycles when the tab is backgrounded.
 
@@ -87,7 +66,7 @@ Multiple `setInterval` calls at 16ms drive the simulation, hub animation, subdiv
 
 ---
 
-### 9. Duplicated Hub Resolution Logic
+### 7. Duplicated Hub Resolution Logic
 
 Hub processing (road snapping, distance-to-water calculation, terrain culling, shape detection) is implemented twice in `GenerationView`: once in `resolveHubs` (instant resolution) and once in the hub animation `useEffect` (animated one-at-a-time). Any change to one must be mirrored in the other.
 
@@ -95,7 +74,7 @@ Hub processing (road snapping, distance-to-water calculation, terrain culling, s
 
 ---
 
-### 10. Monolithic Component Files
+### 8. Monolithic Component Files
 
 - `GenerationCanvas` (484 lines): Contains inline worker code, p5 sketch lifecycle, elevation baking, 6+ graphics buffer caches, mouse/touch/pinch handlers, zoom/pan transform, and the full render loop — all in one component.
 - `GenerationView` (351 lines): Orchestrates a 7-step pipeline with complex state machine logic, 4 separate `useEffect`/`setInterval` loops, and multiple resolve/skip functions.
@@ -107,15 +86,7 @@ Hub processing (road snapping, distance-to-water calculation, terrain culling, s
 
 ## Medium: Project Hygiene
 
-### 11. No `src/` Directory
-
-Source files (`App.tsx`, `index.tsx`, `types.ts`) live at the project root alongside `package.json`, `tsconfig.json`, and `node_modules/`. The path alias `@/*` maps to the project root, meaning `@/node_modules` and `@/package.json` are valid import paths.
-
-**Fix:** Move all source code into `src/`. Update the alias to `"@/*": ["./src/*"]`. Standard Vite convention.
-
----
-
-### 12. API Key Baked into Client Bundle
+### 9. API Key Baked into Client Bundle
 
 Vite's `define` config injects `GEMINI_API_KEY` as a string literal into the built JavaScript. Anyone can view-source and extract it. The AI naming step calls the Gemini API directly from the browser with this key.
 
@@ -123,15 +94,10 @@ Vite's `define` config injects `GEMINI_API_KEY` as a string literal into the bui
 
 ---
 
-## Suggested Order of Execution
+## Completed
 
-1. Fix broken imports (trivial, prevents hidden errors)
-2. Remove import map from `index.html` (trivial, eliminates conflict)
-3. Install Tailwind properly (low effort, unblocks build pipeline)
-4. Move source into `src/` (low effort, clean foundation)
-5. Add strict tsconfig + ESLint + Vitest (low effort, catches bugs going forward)
-6. Extract worker to `.ts` file (low effort, big quality-of-life win)
-7. Replace global state with Zustand (medium effort, highest architectural impact)
-8. Replace p5.js with Canvas2D helpers (medium effort, removes untyped dependency)
-9. Refactor `setInterval` to `requestAnimationFrame` (low effort, better perf)
-10. Deduplicate hub logic + break up monolithic components (ongoing)
+- ~~Broken / phantom imports~~ — Fixed `Shape2D` path, removed phantom `Building` type and dead registry imports
+- ~~Import maps conflicting with Vite~~ — Removed `<script type="importmap">` from `index.html`
+- ~~No test runner~~ — Installed Vitest, rewrote all 30 test files (135 tests) to native `describe`/`it`/`expect`
+- ~~No `src/` directory~~ — Moved all source into `src/`, updated path alias and entry point
+- ~~Dead `index.css` reference~~ — Removed from `index.html`
