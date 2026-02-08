@@ -101,7 +101,7 @@ export const WorkflowDock: React.FC<WorkflowDockProps> = ({
                 className="w-8 h-7 flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 text-white rounded text-[10px] font-bold border border-white/5"
                 title="Instant Resolve"
               >
-                >|
+                {'>|'}
               </button>
             </div>
             
