@@ -4,7 +4,7 @@ import { GenerationState } from '../../types';
 import * as Drawers from './drawers';
 import { Vector2D } from '../../modules/Vector2D';
 
-declare const p5: any;
+import p5 from 'p5';
 
 // Environmental Detection
 const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
