@@ -1,8 +1,11 @@
+import p5 from 'p5';
+import { getCanvasScale } from '../../utils/canvas';
+
 /**
  * Draws the boundary of the simulation world.
  */
-export const drawSimulationBoundary = (p: any, width: number, height: number) => {
-  const currentScale = p.drawingContext.getTransform().a;
+export const drawSimulationBoundary = (p: p5, width: number, height: number) => {
+  const currentScale = getCanvasScale(p);
   p.noFill();
   p.stroke(226, 232, 240, 40); 
   p.strokeWeight(2 / currentScale);

@@ -9,8 +9,8 @@ interface VisualizationControlsProps {
 }
 
 export const VisualizationControls: React.FC<VisualizationControlsProps> = ({ state, onUpdate }) => {
-  const handleVizChange = (key: keyof VisualizationSettings, val: any) => {
-    (state.visualizationSettings as any)[key] = val;
+  const handleVizChange = (key: keyof VisualizationSettings, val: VisualizationSettings[keyof VisualizationSettings]) => {
+    Object.assign(state.visualizationSettings, { [key]: val });
     saveVizSettings(state.visualizationSettings);
     onUpdate();
   };

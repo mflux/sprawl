@@ -1,9 +1,12 @@
+import p5 from 'p5';
+import { SimEvent } from '../../types';
+import { getCanvasScale } from '../../utils/canvas';
 
 /**
  * Draws transient simulation events.
  */
-export const drawEvents = (p: any, events: any[]) => {
-  const currentScale = p.drawingContext.getTransform().a;
+export const drawEvents = (p: p5, events: SimEvent[]) => {
+  const currentScale = getCanvasScale(p);
   const now = Date.now();
   events.forEach(ev => {
     const age = now - ev.timestamp;

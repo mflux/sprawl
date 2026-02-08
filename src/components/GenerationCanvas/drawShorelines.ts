@@ -1,4 +1,7 @@
+import p5 from 'p5';
 import { isBoxInView, ViewBounds } from '../../modules/Culling';
+import { Segment2D } from '../../modules/Segment2D';
+import { getCanvasScale } from '../../utils/canvas';
 
 /**
  * Draws the shoreline layer with an LOD system.
@@ -8,13 +11,13 @@ import { isBoxInView, ViewBounds } from '../../modules/Culling';
  *   - Zoomed in (>= 2.0x): Uses dynamic crisp lines for visual quality.
  */
 export const drawShorelines = (
-  p: any, 
-  shorelines: any[], 
+  p: p5, 
+  shorelines: Segment2D[], 
   bounds: ViewBounds, 
-  shorelineInteriorGraphics?: any,
-  shorelineEdgeGraphics?: any
+  shorelineInteriorGraphics?: p5.Graphics,
+  shorelineEdgeGraphics?: p5.Graphics
 ) => {
-  const currentScale = p.drawingContext.getTransform().a;
+  const currentScale = getCanvasScale(p);
   
   // 1. Always draw the baked foundation (dots and technical water fill)
   if (shorelineInteriorGraphics) {

@@ -1,10 +1,11 @@
+import p5 from 'p5';
 import { ElevationMap } from '../../modules/ElevationMap';
 
 /**
  * Bakes the internal technical "water" indicators: dot matrix and faint underlay.
  */
 export const bakeShorelineInterior = (
-  pg: any,
+  pg: p5.Graphics,
   elevation: ElevationMap,
   waterLevel: number,
   width: number,

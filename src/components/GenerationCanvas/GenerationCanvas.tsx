@@ -121,18 +121,18 @@ const WORKER_CODE = `
 
 export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activeStep, onUpdate }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const p5Instance = useRef<any>(null);
-  const canvasElementRef = useRef<any>(null);
+  const p5Instance = useRef<p5 | null>(null);
+  const canvasElementRef = useRef<HTMLCanvasElement | null>(null);
   const stateRef = useRef<GenerationState>(state);
   const activeStepRef = useRef<number>(activeStep);
   const onUpdateRef = useRef<() => void>(onUpdate);
   
-  const elevationGraphicsRef = useRef<any>(null);
-  const lastElevationRef = useRef<any>(null);
+  const elevationGraphicsRef = useRef<p5.Graphics | null>(null);
+  const lastElevationRef = useRef<unknown>(null);
   const lastElevationResRef = useRef<number>(10);
   
-  const lastFlowFieldRef = useRef<any>(null);
-  const lastShorelineRef = useRef<any>(null);
+  const lastFlowFieldRef = useRef<unknown>(null);
+  const lastShorelineRef = useRef<unknown>(null);
   const lastShapesCountRef = useRef<number>(0);
   const lastArterialsCountRef = useRef<number>(0);
   const lastRoadsCountRef = useRef<number>(0);
@@ -141,12 +141,12 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
   const bakeJobCountRef = useRef<number>(0);
   const completedJobsRef = useRef<number>(0);
 
-  const flowGraphicsRef = useRef<any>(null);
-  const shorelineInteriorGraphicsRef = useRef<any>(null);
-  const shorelineEdgeGraphicsRef = useRef<any>(null);
-  const shapesGraphicsRef = useRef<any>(null);
-  const arterialsGraphicsRef = useRef<any>(null);
-  const roadsGraphicsRef = useRef<any>(null);
+  const flowGraphicsRef = useRef<p5.Graphics | null>(null);
+  const shorelineInteriorGraphicsRef = useRef<p5.Graphics | null>(null);
+  const shorelineEdgeGraphicsRef = useRef<p5.Graphics | null>(null);
+  const shapesGraphicsRef = useRef<p5.Graphics | null>(null);
+  const arterialsGraphicsRef = useRef<p5.Graphics | null>(null);
+  const roadsGraphicsRef = useRef<p5.Graphics | null>(null);
   
   const lastResetHandledRef = useRef<number>(0);
 
@@ -185,7 +185,7 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
         const pg = elevationGraphicsRef.current;
         const img = p5Instance.current.createImage(chunkW, chunkH);
         img.loadPixels();
-        img.pixels.set(data);
+        (img.pixels as unknown as Uint8ClampedArray).set(data);
         img.updatePixels();
         pg.image(img, chunkX, chunkY);
         completedJobsRef.current++;
@@ -208,7 +208,7 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
 
     if (!containerRef.current) return;
 
-    const sketch = (p: any) => {
+    const sketch = (p: p5) => {
       const transform = { 
         offset: new Vector2D(0, 0), 
         scale: 0.2, 
@@ -362,7 +362,7 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
         
         if (viz.renderShorelines) {
           layerStart = performance.now();
-          Drawers.drawShorelines(p, s.shorelines, viewBounds, shorelineInteriorGraphicsRef.current, shorelineEdgeGraphicsRef.current);
+          Drawers.drawShorelines(p, s.shorelines, viewBounds, shorelineInteriorGraphicsRef.current ?? undefined, shorelineEdgeGraphicsRef.current ?? undefined);
           s.renderTimings['SHORE_RENDER'] = performance.now() - layerStart;
         }
 
@@ -373,15 +373,15 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
         }
         
         layerStart = performance.now();
-        Drawers.drawShapes(p, s.shapes, s.arterials, null, s.activeSubdivisionIndex, viewBounds, shapesGraphicsRef.current, s.processedShapeIndices);
+        Drawers.drawShapes(p, s.shapes, s.arterials, null, s.activeSubdivisionIndex, viewBounds, shapesGraphicsRef.current ?? undefined, s.processedShapeIndices);
         s.renderTimings['SHAPE_RENDER'] = performance.now() - layerStart;
 
         layerStart = performance.now();
-        Drawers.drawArterials(p, s.arterials, viewBounds, viz, arterialsGraphicsRef.current);
+        Drawers.drawArterials(p, s.arterials, viewBounds, viz, arterialsGraphicsRef.current ?? undefined);
         s.renderTimings['ART_RENDER'] = performance.now() - layerStart;
 
         layerStart = performance.now();
-        Drawers.drawRoads(p, s.roads, s.recentRoads, s.usageMap, viewBounds, viz, roadsGraphicsRef.current, lastRoadsCountRef.current);
+        Drawers.drawRoads(p, s.roads, s.recentRoads, s.usageMap, viewBounds, viz, roadsGraphicsRef.current ?? undefined, lastRoadsCountRef.current);
         s.renderTimings['ROAD_RENDER'] = performance.now() - layerStart;
 
         if (viz.renderHubs) Drawers.drawHubs(p, s.hubs, viewBounds);
@@ -400,36 +400,42 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
         s.renderTimings['TOTAL'] = performance.now() - frameStart;
       };
 
-      p.touchStarted = (e: any) => {
+      // p5 v2's bundled types are missing touch handler props — cast once
+      const pTouch = p as P5WithTouchEvents;
+      const getTouches = () => p.touches as unknown as P5Touch[];
+
+      pTouch.touchStarted = (e: TouchEvent) => {
         if (e.target !== canvasElementRef.current) return;
-        if (p.touches.length === 1) {
+        const t = getTouches();
+        if (t.length === 1) {
           transform.isPanning = true;
-          transform.lastMouse = new Vector2D(p.touches[0].x, p.touches[0].y);
-        } else if (p.touches.length === 2) {
-          transform.isPanning = false; // Disable single finger pan during multi-touch
-          const d = p.dist(p.touches[0].x, p.touches[0].y, p.touches[1].x, p.touches[1].y);
+          transform.lastMouse = new Vector2D(t[0].x, t[0].y);
+        } else if (t.length === 2) {
+          transform.isPanning = false;
+          const d = p.dist(t[0].x, t[0].y, t[1].x, t[1].y);
           transform.lastPinchDist = d;
           transform.lastPinchScale = transform.scale;
-          transform.lastPinchMidpoint = new Vector2D((p.touches[0].x + p.touches[1].x) / 2, (p.touches[0].y + p.touches[1].y) / 2);
+          transform.lastPinchMidpoint = new Vector2D((t[0].x + t[1].x) / 2, (t[0].y + t[1].y) / 2);
           transform.lastPinchOffset = transform.offset.copy();
         }
         return false;
       };
 
-      p.touchMoved = (e: any) => {
+      pTouch.touchMoved = (e: TouchEvent) => {
         if (e.target !== canvasElementRef.current) return;
-        if (p.touches.length === 1 && transform.isPanning) {
-          const dx = p.touches[0].x - transform.lastMouse.x;
-          const dy = p.touches[0].y - transform.lastMouse.y;
+        const t = getTouches();
+        if (t.length === 1 && transform.isPanning) {
+          const dx = t[0].x - transform.lastMouse.x;
+          const dy = t[0].y - transform.lastMouse.y;
           transform.offset = transform.offset.add(new Vector2D(dx, dy));
-          transform.lastMouse = new Vector2D(p.touches[0].x, p.touches[0].y);
-        } else if (p.touches.length === 2) {
-          const d = p.dist(p.touches[0].x, p.touches[0].y, p.touches[1].x, p.touches[1].y);
+          transform.lastMouse = new Vector2D(t[0].x, t[0].y);
+        } else if (t.length === 2) {
+          const d = p.dist(t[0].x, t[0].y, t[1].x, t[1].y);
           const ratio = d / transform.lastPinchDist;
           const newS = p.constrain(transform.lastPinchScale * ratio, 0.05, 20);
           
-          const centerX = (p.touches[0].x + p.touches[1].x) / 2;
-          const centerY = (p.touches[0].y + p.touches[1].y) / 2;
+          const centerX = (t[0].x + t[1].x) / 2;
+          const centerY = (t[0].y + t[1].y) / 2;
           const currentMidpoint = new Vector2D(centerX, centerY);
           
           // Stable anchor scale & pan (Google Maps style)
@@ -440,18 +446,19 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
         return false;
       };
 
-      p.touchEnded = (e: any) => {
+      pTouch.touchEnded = (e: TouchEvent) => {
         if (e.target !== canvasElementRef.current) return;
-        if (p.touches.length === 0) {
+        const t = getTouches();
+        if (t.length === 0) {
           transform.isPanning = false;
-        } else if (p.touches.length === 1) {
+        } else if (t.length === 1) {
           transform.isPanning = true;
-          transform.lastMouse = new Vector2D(p.touches[0].x, p.touches[0].y);
+          transform.lastMouse = new Vector2D(t[0].x, t[0].y);
         }
         return false;
       };
 
-      p.mousePressed = (e: any) => { 
+      p.mousePressed = (e: MouseEvent) => { 
         if (e.target === canvasElementRef.current) { 
           transform.isPanning = true; 
           transform.lastMouse = new Vector2D(p.mouseX, p.mouseY); 
@@ -460,7 +467,7 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
       };
       p.mouseReleased = () => { transform.isPanning = false; };
       p.mouseDragged = () => { if (transform.isPanning) { const dx = p.mouseX - transform.lastMouse.x; const dy = p.mouseY - transform.lastMouse.y; transform.offset = transform.offset.add(new Vector2D(dx, dy)); transform.lastMouse = new Vector2D(p.mouseX, p.mouseY); } };
-      p.mouseWheel = (e: any) => { if (e.target !== canvasElementRef.current) return; const factor = Math.pow(0.9992, e.deltaY); const oldS = transform.scale; const newS = p.constrain(oldS * factor, 0.05, 20); const mx = p.mouseX, my = p.mouseY; transform.offset = new Vector2D(mx - (mx - transform.offset.x) * (newS / oldS), my - (my - transform.offset.y) * (newS / oldS)); transform.scale = newS; return false; };
+      p.mouseWheel = (e: WheelEvent) => { if (e.target !== canvasElementRef.current) return; const factor = Math.pow(0.9992, e.deltaY); const oldS = transform.scale; const newS = p.constrain(oldS * factor, 0.05, 20); const mx = p.mouseX, my = p.mouseY; transform.offset = new Vector2D(mx - (mx - transform.offset.x) * (newS / oldS), my - (my - transform.offset.y) * (newS / oldS)); transform.scale = newS; return false; };
       p.windowResized = () => { p.resizeCanvas(window.innerWidth, window.innerHeight); };
     };
 

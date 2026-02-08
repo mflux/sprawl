@@ -1,9 +1,11 @@
+import p5 from 'p5';
+import { getCanvasScale } from '../../utils/canvas';
 
 /**
  * Draws a downward pointing highlight arrow at the specified position.
  */
-export const drawHighlight = (p: any, x: number, y: number) => {
-  const currentScale = p.drawingContext.getTransform().a;
+export const drawHighlight = (p: p5, x: number, y: number) => {
+  const currentScale = getCanvasScale(p);
   const time = p.frameCount * 0.1;
   const bounce = Math.sin(time) * (10 / currentScale);
   

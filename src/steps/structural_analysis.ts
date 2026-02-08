@@ -131,12 +131,12 @@ export const runStructuralAnalysis = () => {
 
       return {
         id: Math.random().toString(36).substr(2, 6),
+        type: area > maxSubdivArea ? 'nature_space' : 'urban_district',
         area,
         center: { x: center.x, y: center.y },
         distToNearestHub: minDist,
         nearestHubId,
-        type: area > maxSubdivArea ? 'nature_space' : 'urban_district'
-      } as any;
+      } satisfies NotableShapeMetadata;
     })
     .sort((a, b) => b.area - a.area);
 

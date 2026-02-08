@@ -1,10 +1,13 @@
+import p5 from 'p5';
+import { Shape2D } from '../../modules/Shape2D';
+
 /**
  * Bakes the static interior fills of all city blocks into a p5.Graphics buffer.
  */
 export const bakeShapes = (
-  p: any,
-  pg: any,
-  shapes: any[],
+  p: p5,
+  pg: p5.Graphics,
+  shapes: Shape2D[],
 ) => {
   pg.clear();
   pg.noStroke();

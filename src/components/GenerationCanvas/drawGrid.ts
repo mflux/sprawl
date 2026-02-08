@@ -1,10 +1,12 @@
+import p5 from 'p5';
 import { ViewBounds } from '../../modules/Culling';
+import { getCanvasScale } from '../../utils/canvas';
 
 /**
  * Draws the background schematic grid.
  */
-export const drawGrid = (p: any, bounds: ViewBounds) => {
-  const currentScale = p.drawingContext.getTransform().a;
+export const drawGrid = (p: p5, bounds: ViewBounds) => {
+  const currentScale = getCanvasScale(p);
   p.stroke(51, 65, 85, 10); 
   p.strokeWeight(1 / currentScale);
   

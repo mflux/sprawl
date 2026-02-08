@@ -28,7 +28,6 @@ const LabelRelaxerDemo: React.FC = () => {
         pos: c.copy(),
         width: dims.width,
         height: dims.height,
-        ref: text
       });
     });
     return list;

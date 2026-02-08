@@ -1,13 +1,14 @@
-
+import p5 from 'p5';
 import { Vector2D } from '../../modules/Vector2D';
+import { getCanvasScale } from '../../utils/canvas';
 
 /**
  * Draws the active calculated path for Step 5.
  */
-export const drawActivePath = (p: any, path: Vector2D[] | null) => {
+export const drawActivePath = (p: p5, path: Vector2D[] | null) => {
   if (!path || path.length < 2) return;
 
-  const currentScale = p.drawingContext.getTransform().a;
+  const currentScale = getCanvasScale(p);
   
   // Outer glow
   p.noFill();

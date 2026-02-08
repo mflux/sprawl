@@ -1,5 +1,8 @@
+import p5 from 'p5';
 import { isBoxInView, getPathBounds, ViewBounds } from '../../modules/Culling';
+import { Path2D } from '../../modules/Path2D';
 import { VisualizationSettings } from '../../types';
+import { getCanvasScale } from '../../utils/canvas';
 
 /**
  * Optimized drawer for global arterials.
@@ -7,13 +10,13 @@ import { VisualizationSettings } from '../../types';
  * - Zoomed in (>= 2.0x): Uses dynamic vectors for pixel-perfect sharpness.
  */
 export const drawArterials = (
-  p: any, 
-  arterials: any[], 
+  p: p5, 
+  arterials: Path2D[], 
   bounds: ViewBounds, 
   viz: VisualizationSettings,
-  arterialsGraphics?: any
+  arterialsGraphics?: p5.Graphics
 ) => {
-  const currentScale = p.drawingContext.getTransform().a;
+  const currentScale = getCanvasScale(p);
   const isZoomedOut = currentScale < 2.0;
 
   if (isZoomedOut && arterialsGraphics) {

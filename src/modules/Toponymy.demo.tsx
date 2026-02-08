@@ -28,8 +28,8 @@ const ToponymyDemo: React.FC = () => {
       { id: 'bridge-02', midpoint: { x: 700, y: 300 }, length: 450 }
     ],
     notableShapes: [
-      { id: 'dist-01', area: 85000, center: { x: 300, y: 300 }, distToNearestHub: 50, nearestHubId: 'hub-alpha' },
-      { id: 'park-north', area: 250000, center: { x: 100, y: 100 }, distToNearestHub: 300, nearestHubId: 'hub-alpha' },
+      { id: 'dist-01', type: 'urban_district', area: 85000, center: { x: 300, y: 300 }, distToNearestHub: 50, nearestHubId: 'hub-alpha' },
+      { id: 'park-north', type: 'nature_space', area: 250000, center: { x: 100, y: 100 }, distToNearestHub: 300, nearestHubId: 'hub-alpha' },
     ]
   }), []);
 

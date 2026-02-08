@@ -186,7 +186,7 @@ export const resetState = () => {
   state.elevationBakeProgress = 0;
 };
 
-export const addEvent = (type: SimEventType, antIds: string[], position: Vector2D, extraPos?: Vector2D, data?: any) => {
+export const addEvent = (type: SimEventType, antIds: string[], position: Vector2D, extraPos?: Vector2D, data?: Record<string, string | number>) => {
   const event: SimEvent = {
     id: Math.random().toString(36).substr(2, 9),
     type,

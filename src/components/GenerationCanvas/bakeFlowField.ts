@@ -1,9 +1,10 @@
+import p5 from 'p5';
 import { FlowField } from '../../modules/FlowField';
 
 /**
  * Bakes the entire flow field into a p5.Graphics buffer.
  */
-export const bakeFlowField = (p: any, pg: any, field: FlowField) => {
+export const bakeFlowField = (p: p5, pg: p5.Graphics, field: FlowField) => {
   pg.clear();
   pg.push();
   pg.colorMode(p.HSB, 360, 100, 100, 1);

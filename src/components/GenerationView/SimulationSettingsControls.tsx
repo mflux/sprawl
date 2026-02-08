@@ -12,8 +12,8 @@ interface SimulationSettingsControlsProps {
 export const SimulationSettingsControls: React.FC<SimulationSettingsControlsProps> = ({ state, onUpdate }) => {
   const [showCopied, setShowCopied] = useState(false);
 
-  const handleSettingChange = (key: keyof SimulationSettings, val: any) => {
-    (state.settings as any)[key] = val;
+  const handleSettingChange = (key: keyof SimulationSettings, val: SimulationSettings[keyof SimulationSettings]) => {
+    Object.assign(state.settings, { [key]: val });
     saveSettings(state.settings);
     onUpdate();
   };

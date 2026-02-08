@@ -3,7 +3,7 @@ import { state, addEvent } from '../state/store';
 import { profile } from '../utils/Profiler';
 import { Vector2D } from '../modules/Vector2D';
 import { VisualizationSettings } from "../types";
-import { LabelRelaxer } from "../modules/LabelRelaxer";
+import { LabelRelaxer, Label } from "../modules/LabelRelaxer";
 
 export const stepInfo: { title: string, desc: string, vizTransitions: Partial<VisualizationSettings> } = {
   title: "AI Toponymy",
@@ -139,7 +139,7 @@ export const runAINaming = async () => {
 
     // 2. Perform Label Relaxation Simulation
     profile('LabelRelaxer.run', () => {
-      const allLabels: any[] = [];
+      const allLabels: (Label & { ref: { labelOffset?: { x: number; y: number } } })[] = [];
       const scaleHeuristic = 0.5;
 
       geo.hubs.forEach(h => {
@@ -171,7 +171,7 @@ export const runAINaming = async () => {
 
       relaxed.forEach(l => {
         const offset = l.pos.sub(l.anchor);
-        l.ref.labelOffset = { x: offset.x, y: offset.y };
+        if (l.ref) l.ref.labelOffset = { x: offset.x, y: offset.y };
       });
     });
 
@@ -180,7 +180,7 @@ export const runAINaming = async () => {
     });
 
     state.iteration++;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Naming Failed:', error);
     addEvent('death_lifetime', [], new Vector2D(0, 0), undefined, { message: "AI Naming Error." });
   }

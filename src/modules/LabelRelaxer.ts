@@ -8,7 +8,7 @@ export interface Label {
   pos: Vector2D;
   width: number;
   height: number;
-  ref?: any;
+  ref?: { labelOffset?: { x: number; y: number } };
 }
 
 export class LabelRelaxer {

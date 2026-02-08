@@ -1,10 +1,13 @@
+import p5 from 'p5';
 import { isBoxInView, ViewBounds } from '../../modules/Culling';
+import { Hub } from '../../modules/Hub';
+import { getCanvasScale } from '../../utils/canvas';
 
 /**
  * Draws urban hubs with an dramatic entry animation.
  */
-export const drawHubs = (p: any, hubs: any[], bounds: ViewBounds) => {
-  const currentScale = p.drawingContext.getTransform().a;
+export const drawHubs = (p: p5, hubs: Hub[], bounds: ViewBounds) => {
+  const currentScale = getCanvasScale(p);
   const now = Date.now();
 
   hubs.forEach(hub => {

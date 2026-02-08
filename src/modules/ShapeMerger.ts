@@ -59,7 +59,7 @@ export class ShapeMerger {
    * This is useful for cleaning up slivers or overly dense block areas.
    */
   static runAutoMerge(shapes: Shape2D[], areaThreshold: number): Shape2D[] {
-    let currentShapes = [...shapes];
+    const currentShapes = [...shapes];
     let changed = true;
     let iterations = 0;
     const MAX_ITERATIONS = 10;

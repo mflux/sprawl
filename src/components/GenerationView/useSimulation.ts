@@ -345,7 +345,7 @@ export const useSimulation = (onUpdate: () => void) => {
   }, [processAnt, checkCollisions, onUpdate, syncRoadGrid, syncAntGrid]);
 
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval>;
     if (isSimulating) {
       interval = setInterval(() => {
         if (cooldown > 0) {

@@ -35,7 +35,7 @@ export interface SimEvent {
   antIds: string[];
   position: Vector2D;
   extraPos?: Vector2D; // For segment events
-  data?: any;
+  data?: Record<string, string | number>;
 }
 
 export interface ProfileLog {
@@ -73,9 +73,12 @@ export interface BridgeMetadata {
   labelOffset?: { x: number; y: number };
 }
 
+export type DistrictType = 'nature_space' | 'urban_district';
+
 export interface NotableShapeMetadata {
   id: string;
   name?: string;
+  type: DistrictType;
   area: number;
   center: { x: number; y: number };
   distToNearestHub: number;

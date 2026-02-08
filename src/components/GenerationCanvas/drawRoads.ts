@@ -1,22 +1,24 @@
-
+import p5 from 'p5';
 import { isBoxInView, ViewBounds } from '../../modules/Culling';
+import { Segment2D } from '../../modules/Segment2D';
 import { VisualizationSettings } from '../../types';
+import { getCanvasScale } from '../../utils/canvas';
 
 /**
  * Optimized drawer for secondary streets and connections.
  * Bridges are rendered with elevated shadows and structural thickness.
  */
 export const drawRoads = (
-  p: any, 
-  roads: any[], 
-  recentRoads: any[], 
+  p: p5, 
+  roads: Segment2D[], 
+  recentRoads: Segment2D[], 
   usageMap: Map<string, number>, 
   bounds: ViewBounds, 
   viz: VisualizationSettings,
-  roadsGraphics?: any,
+  roadsGraphics?: p5.Graphics,
   lastBakedCount: number = 0
 ) => {
-  const currentScale = p.drawingContext.getTransform().a;
+  const currentScale = getCanvasScale(p);
   const baseWeight = viz.roadThickness / currentScale;
   const bridgeWeight = (viz.roadThickness * 5.5) / currentScale;
   const shadowOffset = 5.0 / currentScale;
@@ -121,8 +123,8 @@ export const drawRoads = (
   }
 
   // 2. Traffic and Highlights
-  const highTrafficRoads: { r: any, usage: number }[] = [];
-  const visibleRecentRoads: any[] = [];
+  const highTrafficRoads: { r: Segment2D, usage: number }[] = [];
+  const visibleRecentRoads: Segment2D[] = [];
 
   for (let i = 0; i < roads.length; i++) {
     const r = roads[i];

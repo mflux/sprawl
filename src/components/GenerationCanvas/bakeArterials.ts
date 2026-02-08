@@ -1,4 +1,6 @@
 
+import p5 from 'p5';
+import { Path2D } from '../../modules/Path2D';
 import { VisualizationSettings } from '../../types';
 
 /**
@@ -6,9 +8,9 @@ import { VisualizationSettings } from '../../types';
  * Arterials that contain bridge segments are rendered with structural thickness and shadows.
  */
 export const bakeArterials = (
-  p: any,
-  pg: any,
-  arterials: any[],
+  p: p5,
+  pg: p5.Graphics,
+  arterials: Path2D[],
   viz: VisualizationSettings,
 ) => {
   pg.clear();
@@ -25,7 +27,7 @@ export const bakeArterials = (
   for (let i = 0; i < arterials.length; i++) {
     const art = arterials[i];
     const segments = art.toSegments();
-    segments.forEach((seg: any) => {
+    segments.forEach((seg) => {
       if (seg.isBridge) {
         pg.vertex(seg.p1.x + shadowOffset, seg.p1.y + shadowOffset);
         pg.vertex(seg.p2.x + shadowOffset, seg.p2.y + shadowOffset);
@@ -41,7 +43,7 @@ export const bakeArterials = (
   for (let i = 0; i < arterials.length; i++) {
     const art = arterials[i];
     const segments = art.toSegments();
-    segments.forEach((seg: any) => {
+    segments.forEach((seg) => {
       if (!seg.isBridge) {
         pg.vertex(seg.p1.x, seg.p1.y);
         pg.vertex(seg.p2.x, seg.p2.y);
@@ -57,7 +59,7 @@ export const bakeArterials = (
   for (let i = 0; i < arterials.length; i++) {
     const art = arterials[i];
     const segments = art.toSegments();
-    segments.forEach((seg: any) => {
+    segments.forEach((seg) => {
       if (seg.isBridge) {
         pg.vertex(seg.p1.x, seg.p1.y);
         pg.vertex(seg.p2.x, seg.p2.y);

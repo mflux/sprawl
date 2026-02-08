@@ -1,4 +1,6 @@
 
+import p5 from 'p5';
+import { Segment2D } from '../../modules/Segment2D';
 import { VisualizationSettings } from '../../types';
 
 /**
@@ -6,9 +8,9 @@ import { VisualizationSettings } from '../../types';
  * Includes structural bridge details and relief-aligned shadows.
  */
 export const bakeRoads = (
-  p: any,
-  pg: any,
-  roads: any[],
+  p: p5,
+  pg: p5.Graphics,
+  roads: Segment2D[],
   viz: VisualizationSettings
 ) => {
   pg.clear();

@@ -2,6 +2,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { GenerationCanvas } from '../GenerationCanvas/GenerationCanvas';
 import { state as genState, saveSettings, saveVizSettings } from '../../state/store';
+import { VisualizationSettings } from '../../types';
 import { runLandscapeGen, stepInfo as step1Info } from '../../steps/landscape_gen';
 import { runInfrastructureGen, stepInfo as step2Info } from '../../steps/infrastructure_gen';
 import { runUrbanGrowth, stepInfo as step3Info } from '../../steps/urban_growth';
@@ -23,7 +24,7 @@ interface GenerationViewProps {
   setView?: (view: 'generation' | 'concepts') => void;  // kept for App.tsx caller, unused here for now
 }
 
-const STEP_INFO_MAP: Record<number, any> = {
+const STEP_INFO_MAP: Record<number, { title: string; desc: string; vizTransitions: Partial<VisualizationSettings> }> = {
   1: step1Info,
   2: step2Info,
   3: step3Info,
@@ -186,7 +187,7 @@ export const GenerationView: React.FC<GenerationViewProps> = () => {
   }, [resolveAnts, setIsSimulating, triggerUpdate, activeStep, resolveSubdivision, resolveHubs, applyVizTransitions]);
 
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval>;
     if (isAnimatingHubs && genState.hubQueue.length > 0) {
       interval = setInterval(() => {
         const hub = genState.hubQueue.shift();
@@ -220,7 +221,7 @@ export const GenerationView: React.FC<GenerationViewProps> = () => {
   }, [isAnimatingHubs, triggerUpdate]);
 
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval>;
     if (isSimulatingSubdivision && genState.subdivisionQueue.length > 0) {
       interval = setInterval(() => {
         const speed = Math.max(1, genState.settings.simSpeed);
@@ -231,7 +232,7 @@ export const GenerationView: React.FC<GenerationViewProps> = () => {
   }, [isSimulatingSubdivision, performSubdivisionStep]);
 
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval>;
     if (isSimulatingTraffic) {
       interval = setInterval(() => {
         const speed = Math.max(1, genState.settings.simSpeed);

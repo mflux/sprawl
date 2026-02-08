@@ -1,3 +1,4 @@
+import p5 from 'p5';
 import { ElevationMap } from '../../modules/ElevationMap';
 
 /**
@@ -9,8 +10,8 @@ import { ElevationMap } from '../../modules/ElevationMap';
  * consistency across different LOD scales.
  */
 export const bakeElevation = (
-  p: any, 
-  pg: any, 
+  p: p5, 
+  pg: p5.Graphics, 
   elevation: ElevationMap, 
   waterLevel: number, 
   originX: number, 

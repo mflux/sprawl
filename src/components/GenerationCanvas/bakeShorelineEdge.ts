@@ -1,3 +1,4 @@
+import p5 from 'p5';
 import { Segment2D } from '../../modules/Segment2D';
 
 /**
@@ -5,8 +6,8 @@ import { Segment2D } from '../../modules/Segment2D';
  * These are intended for use when zoomed out to minimize CPU overhead.
  */
 export const bakeShorelineEdge = (
-  p: any,
-  pg: any,
+  p: p5,
+  pg: p5.Graphics,
   shorelines: Segment2D[]
 ) => {
   pg.clear();

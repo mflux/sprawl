@@ -1,12 +1,13 @@
-
+import p5 from 'p5';
 import { isBoxInView, ViewBounds } from '../../modules/Culling';
 import { Vector2D } from '../../modules/Vector2D';
+import { getCanvasScale } from '../../utils/canvas';
 
 /**
  * Draws the map entry/exit points at the boundaries.
  */
-export const drawExits = (p: any, exits: Vector2D[], bounds: ViewBounds) => {
-  const currentScale = p.drawingContext.getTransform().a;
+export const drawExits = (p: p5, exits: Vector2D[], bounds: ViewBounds) => {
+  const currentScale = getCanvasScale(p);
   
   exits.forEach(exit => {
     if (!isBoxInView(exit.x - 10, exit.y - 10, exit.x + 10, exit.y + 10, bounds)) return;

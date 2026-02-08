@@ -1,7 +1,9 @@
-
+import p5 from 'p5';
 import { isBoxInView, getPathBounds, ViewBounds } from '../../modules/Culling';
 import { Path2D } from '../../modules/Path2D';
 import { Segment2D } from '../../modules/Segment2D';
+import { Shape2D } from '../../modules/Shape2D';
+import { getCanvasScale } from '../../utils/canvas';
 
 /**
  * Draws city shapes (blocks) with a strict LOD transition.
@@ -9,16 +11,16 @@ import { Segment2D } from '../../modules/Segment2D';
  * - Zoomed in (>= 2.0x): Uses dynamic vector geometry for high-resolution crispness.
  */
 export const drawShapes = (
-  p: any, 
-  shapes: any[], 
+  p: p5, 
+  shapes: Shape2D[], 
   arterials: Path2D[], 
   hoveredIndex: number | null, 
   activeSubdivisionIndex: number | null,
   bounds: ViewBounds, 
-  shapesGraphics?: any,
+  shapesGraphics?: p5.Graphics,
   processedIndices: Set<number> = new Set() // Added to show progress
 ) => {
-  const currentScale = p.drawingContext.getTransform().a;
+  const currentScale = getCanvasScale(p);
   const isZoomedOut = currentScale < 2.0;
   
   // 1. Static Fill Layer (Exclusive LOD)
@@ -61,7 +63,7 @@ export const drawShapes = (
       const b = getPathBounds(shape.points);
       if (isBoxInView(b.minX, b.minY, b.maxX, b.maxY, bounds)) {
         p.beginShape();
-        shape.points.forEach((pt: any) => p.vertex(pt.x, pt.y));
+        shape.points.forEach((pt) => p.vertex(pt.x, pt.y));
         p.endShape(p.CLOSE);
       }
     }
@@ -75,7 +77,7 @@ export const drawShapes = (
     p.noStroke();
     p.fill(34, 211, 238, 100 + pulse * 100); 
     p.beginShape();
-    shape.points.forEach((pt: any) => p.vertex(pt.x, pt.y));
+    shape.points.forEach((pt) => p.vertex(pt.x, pt.y));
     p.endShape(p.CLOSE);
 
     p.push();
@@ -83,12 +85,12 @@ export const drawShapes = (
     p.stroke(34, 211, 238, 150);
     p.strokeWeight(6 / currentScale);
     p.beginShape();
-    shape.points.forEach((pt: any) => p.vertex(pt.x, pt.y));
+    shape.points.forEach((pt) => p.vertex(pt.x, pt.y));
     p.endShape(p.CLOSE);
     p.stroke(255, 255, 255, 220);
     p.strokeWeight(2 / currentScale);
     p.beginShape();
-    shape.points.forEach((pt: any) => p.vertex(pt.x, pt.y));
+    shape.points.forEach((pt) => p.vertex(pt.x, pt.y));
     p.endShape(p.CLOSE);
     p.pop();
   }

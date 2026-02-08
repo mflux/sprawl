@@ -1,12 +1,14 @@
+import p5 from 'p5';
 import { GeographyMetadata } from '../../types';
 import { ViewBounds, isBoxInView } from '../../modules/Culling';
+import { getCanvasScale } from '../../utils/canvas';
 
 /**
  * Renders labels for city features with a Google Maps-style LOD system.
  * Labels fade in and out based on importance (Tier, Area) and current zoom scale.
  */
-export const drawNames = (p: any, geo: GeographyMetadata, bounds: ViewBounds) => {
-  const currentScale = p.drawingContext.getTransform().a;
+export const drawNames = (p: p5, geo: GeographyMetadata, bounds: ViewBounds) => {
+  const currentScale = getCanvasScale(p);
   
   // Hard visibility floor
   if (currentScale < 0.08) return;

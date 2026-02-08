@@ -1,13 +1,15 @@
-
+import p5 from 'p5';
 import { isBoxInView, ViewBounds } from '../../modules/Culling';
+import { Ant } from '../../modules/Ant';
 import { VisualizationSettings } from '../../types';
+import { getCanvasScale } from '../../utils/canvas';
 
 /**
  * Draws autonomous agents (Ants).
  * Colors agents based on their spawning origin (Hub, Termination, or Perpendicular).
  */
-export const drawAnts = (p: any, ants: any[], bounds: ViewBounds, viz: VisualizationSettings) => {
-  const currentScale = p.drawingContext.getTransform().a;
+export const drawAnts = (p: p5, ants: Ant[], bounds: ViewBounds, viz: VisualizationSettings) => {
+  const currentScale = getCanvasScale(p);
   ants.forEach(ant => {
     if (!ant.isAlive) return;
     if (!isBoxInView(ant.position.x, ant.position.y, ant.position.x, ant.position.y, bounds)) return;
