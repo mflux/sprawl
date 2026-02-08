@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import engine, { state, addEvent } from '../state/engine';
+import engine, { state, addEvent, notify } from '../state/engine';
 import { profile } from '../utils/Profiler';
 import { Vector2D } from '../modules/Vector2D';
 import { LabelRelaxer, Label } from "../modules/LabelRelaxer";
@@ -61,7 +61,7 @@ export const runAINaming = async () => {
   };
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
+
   const prompt = `
     You are a world-class urban toponymist. 
     A procedural city map has been generated. Use the provided metadata—including normalized X/Y coordinates (0.0 to 1.0)—to reason about the city's naming conventions.
@@ -126,22 +126,22 @@ export const runAINaming = async () => {
     const result = JSON.parse(text);
 
     // 1. Assign names
-    result.hubs?.forEach((item: {id: string, name: string}) => {
+    result.hubs?.forEach((item: { id: string, name: string }) => {
       const hub = state.geography.hubs.find(h => h.id === item.id);
       if (hub) hub.name = item.name;
     });
 
-    result.waterBodies?.forEach((item: {id: string, name: string}) => {
+    result.waterBodies?.forEach((item: { id: string, name: string }) => {
       const wb = state.geography.waterBodies.find(w => w.id === item.id);
       if (wb) wb.name = item.name;
     });
 
-    result.bridges?.forEach((item: {id: string, name: string}) => {
+    result.bridges?.forEach((item: { id: string, name: string }) => {
       const bridge = state.geography.bridges.find(b => b.id === item.id);
       if (bridge) bridge.name = item.name;
     });
 
-    result.notableShapes?.forEach((item: {id: string, name: string}) => {
+    result.notableShapes?.forEach((item: { id: string, name: string }) => {
       const ns = state.geography.notableShapes.find(n => n.id === item.id);
       if (ns) ns.name = item.name;
     });
@@ -184,11 +184,12 @@ export const runAINaming = async () => {
       });
     });
 
-    addEvent('naming_complete', [], new Vector2D(state.simWidth/2, state.simHeight/2), undefined, {
+    addEvent('naming_complete', [], new Vector2D(state.simWidth / 2, state.simHeight / 2), undefined, {
       message: `Urban Toponymy Applied: ${geo.hubs.length + geo.waterBodies.length + geo.notableShapes.length + geo.bridges.length} features identified.`
     });
 
     state.iteration++;
+    notify();
   } catch (error: unknown) {
     console.error('Naming Failed:', error);
     addEvent('death_lifetime', [], new Vector2D(0, 0), undefined, { message: "AI Naming Error." });

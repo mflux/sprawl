@@ -57,6 +57,7 @@ export interface LoopCallbacks {
 export const state: GenerationState = {
   simWidth: 2400,
   simHeight: 1800,
+  activeStep: 0,
   hubs: [],
   hubQueue: [],
   exits: [],

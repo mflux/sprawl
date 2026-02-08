@@ -1,4 +1,4 @@
-import { state, resetEngine as resetState } from '../state/engine';
+import { state, resetEngine as resetState, notify } from '../state/engine';
 import { Vector2D } from '../modules/Vector2D';
 import { TerrainFlowField } from '../modules/TerrainFlowField';
 import { ElevationMap } from '../modules/ElevationMap';
@@ -38,14 +38,14 @@ export const runLandscapeGen = () => {
 
   // 1. Initialize Terrain Elevation
   const elevation = new ElevationMap(
-    Math.random(), 
+    Math.random(),
     state.settings.terrainScale
   );
 
   // 2. Procedural River Generation
   const riverCount = state.settings.riverCount || 2;
   const generatedRivers: River[] = [];
-  
+
   const edges = [
     { side: 'top', bias: new Vector2D(0, 1) },
     { side: 'bottom', bias: new Vector2D(0, -1) },
@@ -67,11 +67,11 @@ export const runLandscapeGen = () => {
 
       if (elevation.getHeight(startX, startY) > waterLevel + 0.1) {
         const testRiver = RiverGenerator.generate(
-          elevation, 
-          waterLevel, 
-          new Vector2D(startX, startY), 
-          8.0, 
-          1000, 
+          elevation,
+          waterLevel,
+          new Vector2D(startX, startY),
+          8.0,
+          1000,
           edge.bias.mul(0.5)
         );
         if (testRiver && testRiver.points.length > maxLen) {
@@ -80,7 +80,7 @@ export const runLandscapeGen = () => {
         }
       }
     }
-    
+
     if (bestRiver) {
       bestRiver.width = 40 + Math.random() * 40;
       bestRiver.depth = 0.25 + Math.random() * 0.15;
@@ -98,20 +98,20 @@ export const runLandscapeGen = () => {
     state.settings.terrainWaterLevel,
     width,
     height,
-    10, 
+    10,
     0,
     0
   );
 
   // 4. Initialize Topography-Aware Flow Field
-  const ffResolution = 15; 
+  const ffResolution = 15;
   state.flowField = new TerrainFlowField(
     state.elevation,
     state.settings.terrainWaterLevel,
-    width, 
-    height, 
-    ffResolution, 
-    0, 
+    width,
+    height,
+    ffResolution,
+    0,
     0,
     state.settings.flowFieldScaleLarge,
     state.settings.flowFieldScaleSmall
@@ -119,7 +119,7 @@ export const runLandscapeGen = () => {
 
   // 5. Water Body Detection for metadata
   if (state.elevation) {
-    const gridRes = 40; 
+    const gridRes = 40;
     const cols = Math.ceil(width / gridRes);
     const rows = Math.ceil(height / gridRes);
     const waterGrid: boolean[][] = [];
@@ -139,29 +139,29 @@ export const runLandscapeGen = () => {
       for (let y = 0; y < rows; y++) {
         const key = `${x},${y}`;
         if (waterGrid[x][y] && !visited.has(key)) {
-          const component: {x: number, y: number}[] = [];
-          const queue = [{x, y}];
+          const component: { x: number, y: number }[] = [];
+          const queue = [{ x, y }];
           visited.add(key);
 
           while (queue.length > 0) {
             const curr = queue.shift()!;
             component.push(curr);
             const neighbors = [
-              {nx: curr.x + 1, ny: curr.y}, {nx: curr.x - 1, ny: curr.y},
-              {nx: curr.x, ny: curr.y + 1}, {nx: curr.x, ny: curr.y - 1},
+              { nx: curr.x + 1, ny: curr.y }, { nx: curr.x - 1, ny: curr.y },
+              { nx: curr.x, ny: curr.y + 1 }, { nx: curr.x, ny: curr.y - 1 },
             ];
-            for (const {nx, ny} of neighbors) {
+            for (const { nx, ny } of neighbors) {
               const nkey = `${nx},${ny}`;
               if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && waterGrid[nx][ny] && !visited.has(nkey)) {
                 visited.add(nkey);
-                queue.push({x: nx, y: ny});
+                queue.push({ x: nx, y: ny });
               }
             }
           }
           const area = component.length * gridRes * gridRes;
-          if (area > 5000) { 
-            const avgX = (component.reduce((sum, p) => sum + p.x, 0) / component.length) * gridRes + gridRes/2;
-            const avgY = (component.reduce((sum, p) => sum + p.y, 0) / component.length) * gridRes + gridRes/2;
+          if (area > 5000) {
+            const avgX = (component.reduce((sum, p) => sum + p.x, 0) / component.length) * gridRes + gridRes / 2;
+            const avgY = (component.reduce((sum, p) => sum + p.y, 0) / component.length) * gridRes + gridRes / 2;
             waterBodies.push({
               id: 'water-' + Math.random().toString(36).substr(2, 6),
               area,
@@ -175,4 +175,7 @@ export const runLandscapeGen = () => {
   }
 
   state.iteration++;
+
+  // Notify all subscribers that elevation and landscape data is ready
+  notify();
 };

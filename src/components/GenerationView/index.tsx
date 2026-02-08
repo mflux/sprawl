@@ -30,7 +30,9 @@ export const GenerationView: React.FC = () => {
     // Resolve any in-progress simulation before transitioning
     engine.cleanup();
 
+    // Update both UI state and engine state
     setActiveStep(stepNum);
+    engine.state.activeStep = stepNum;
 
     // Apply viz transitions
     for (const [key, value] of Object.entries(stepDef.vizTransitions)) {
@@ -44,6 +46,11 @@ export const GenerationView: React.FC = () => {
     if (stepDef.initialSimSpeed !== undefined) {
       updateSetting('simSpeed', stepDef.initialSimSpeed);
     }
+
+    // Notify subscriptions immediately after step change
+    // This allows async processes (like high-res elevation baking) to start
+    // before the step's execute() completes
+    engine.notify();
 
     // Show landscape spinner for reset-capable steps
     if (stepDef.canReset) {

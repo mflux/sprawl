@@ -105,7 +105,7 @@ export interface SimulationSettings {
   hubDirectness: number; // Ratio of ants that take a direct path to the target hub
   antTurnSpeed: number;
   antWaves: number; // Number of spawning waves
-  
+
   // Bridges
   bridgeProbability: number; // Chance per wave to attempt bridge spawning
   maxBridgeLength: number; // Maximum world-units a bridge can span
@@ -113,7 +113,7 @@ export interface SimulationSettings {
   // Ring Roads
   ringRoadProbability: number;
   ringRoadRadiusMultiplier: number;
-  
+
   // Agent Behavior
   antMaxLife: number;
   antTrailDistance: number;
@@ -124,10 +124,10 @@ export interface SimulationSettings {
   minParallelDist: number; // Distance at which parallel repulsion kicks in
   antAttractionRadius: number; // Distance at which opposing ants pull together
   antAttractionStrength: number; // Intensity of the magnetism
-  
+
   // Agent Behavioral Refinements
   carrierCount: number;
-  carrierForkSpacing: number; 
+  carrierForkSpacing: number;
   carrierMinDistance: number;
 
   // Discovery & Subdivision
@@ -143,7 +143,7 @@ export interface SimulationSettings {
   subdivideWarp: number;
   subdivideRelax: number;
   subdivisionDensity: number;
-  
+
   // Environment
   flowFieldInfluence: number;
   flowFieldScaleLarge: number;
@@ -173,28 +173,29 @@ export interface VisualizationSettings {
 export interface GenerationState {
   simWidth: number;
   simHeight: number;
+  activeStep: number; // Current simulation step (1-indexed)
   hubs: Hub[];
   hubQueue: Hub[]; // Staged hubs for animation
   exits: Vector2D[];
   ants: Ant[];
   roads: Segment2D[];
-  recentRoads: Segment2D[]; 
+  recentRoads: Segment2D[];
   rivers: River[];
   shapes: Shape2D[];
-  shapeGrid?: ShapeSpatialGrid; 
+  shapeGrid?: ShapeSpatialGrid;
   subdivisionQueue: number[]; // Queue of shape indices waiting for subdivision
-  processedShapeIndices: Set<number>; 
+  processedShapeIndices: Set<number>;
   arterials: Path2D[];
   shorelines: Segment2D[];
   geography: GeographyMetadata;
   hoveredGeoId: string | null;
-  activeSubdivisionIndex: number | null; 
-  usageMap: Map<string, number>; 
+  activeSubdivisionIndex: number | null;
+  usageMap: Map<string, number>;
   usageCount: number;
   activePath: Vector2D[] | null;
   events: SimEvent[];
   profileLogs: ProfileLog[];
-  renderTimings: Record<string, number>; 
+  renderTimings: Record<string, number>;
   iteration: number;
   lastReset: number; // Explicit signal for cache invalidation
   currentWave: number;
