@@ -1,6 +1,5 @@
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Vector2D } from './Vector2D';
 import { ElevationMap } from './ElevationMap';
 import { ShorelineDetector } from './ShorelineDetector';
 
@@ -8,8 +7,6 @@ const ShorelineDetectorDemo: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [res, setRes] = useState(10);
   const [waterLevel, setWaterLevel] = useState(0.42);
-  const [iteration, setIteration] = useState(0);
-
   const seed = useMemo(() => Math.random(), []);
   const elevation = useMemo(() => new ElevationMap(seed, 0.02), [seed]);
 

@@ -10,8 +10,8 @@ export const bakeArterials = (
   pg: any,
   arterials: any[],
   viz: VisualizationSettings,
-  simWidth: number,
-  simHeight: number
+  _simWidth: number,
+  _simHeight: number
 ) => {
   pg.clear();
   pg.noFill();

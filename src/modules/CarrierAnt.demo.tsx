@@ -9,7 +9,7 @@ const CarrierDemo: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [iteration, setIteration] = useState(0);
   const [spacing, setSpacing] = useState(30);
-  const [speed, setSpeed] = useState(1.2);
+  const [speed] = useState(1.2);
   
   const dataRef = useRef<{ 
     ants: Ant[], 
@@ -40,7 +40,6 @@ const CarrierDemo: React.FC = () => {
         const ant = ants[i];
         if (!ant.isAlive) continue;
 
-        const oldPos = ant.position.copy();
         const result = ant.update();
         
         if (result === 'trail_left') {

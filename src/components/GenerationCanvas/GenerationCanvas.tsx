@@ -266,7 +266,7 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
           s.elevationBakeProgress = 0;
           completedJobsRef.current = 0;
           const chunkSize = IS_MOBILE ? 256 : 128;
-          let jobList = [];
+          const jobList = [];
           for (let cx = 0; cx < tw; cx += chunkSize) {
             for (let cy = 0; cy < th; cy += chunkSize) {
               jobList.push({

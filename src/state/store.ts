@@ -1,6 +1,5 @@
 import { GenerationState, SimEvent, SimEventType, SimulationSettings, VisualizationSettings, ProfileLog } from '../types';
 import { Vector2D } from '../modules/Vector2D';
-import { Segment2D } from '../modules/Segment2D';
 
 const SETTINGS_KEY = 'urban_genesis_settings_v34'; 
 const VIZ_SETTINGS_KEY = 'urban_genesis_viz_settings_v7';

@@ -4,7 +4,6 @@ import { Vector2D } from '../modules/Vector2D';
 import { Ant } from '../modules/Ant';
 import { Hub } from '../modules/Hub';
 import { RoadPath } from '../modules/RoadPath';
-import { RoadNetwork } from '../modules/RoadNetwork';
 import { VisualizationSettings } from '../types';
 
 export const stepInfo: { title: string, desc: string, vizTransitions: Partial<VisualizationSettings> } = {

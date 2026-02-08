@@ -1,5 +1,3 @@
-import { getPathBounds, isBoxInView } from '../../modules/Culling';
-
 /**
  * Bakes the static interior fills of all city blocks into a p5.Graphics buffer.
  */
@@ -7,8 +5,8 @@ export const bakeShapes = (
   p: any,
   pg: any,
   shapes: any[],
-  simWidth: number,
-  simHeight: number
+  _simWidth: number,
+  _simHeight: number
 ) => {
   pg.clear();
   pg.noStroke();

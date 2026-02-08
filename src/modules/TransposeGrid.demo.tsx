@@ -6,7 +6,7 @@ import { TransposeGrid } from './TransposeGrid';
 
 const TransposeGridDemo: React.FC = () => {
   const [rotation, setRotation] = useState(0.2);
-  const [spacing, setSpacing] = useState(15);
+  const [spacing] = useState(15);
   const [warpIntensity, setWarpIntensity] = useState(8);
   const [relaxIters, setRelaxIters] = useState(3);
   const [showRaw, setShowRaw] = useState(false);

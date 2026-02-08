@@ -5,8 +5,6 @@ import { Capsule2D } from './Capsule2D';
 const CapsuleDemo: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [mousePos, setMousePos] = useState<Vector2D>(new Vector2D(70, 50));
-  const [iteration, setIteration] = useState(0);
-
   // Fixed Capsule
   const staticCapsule = new Capsule2D(new Vector2D(30, 30), new Vector2D(30, 70), 8);
 

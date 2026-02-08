@@ -10,7 +10,7 @@ import { spawnAntWave } from '../../steps/urban_growth';
 import { profile } from '../../utils/Profiler';
 import { Capsule2D } from '../../modules/Capsule2D';
 
-export const useSimulation = (onUpdate: () => void, onSimulationFinished?: (functionName: string, duration: number) => void) => {
+export const useSimulation = (onUpdate: () => void, _onSimulationFinished?: (functionName: string, duration: number) => void) => {
   const [isSimulating, setIsSimulating] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   

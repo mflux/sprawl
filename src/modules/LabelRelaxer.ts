@@ -19,7 +19,6 @@ export class LabelRelaxer {
   static relax(labels: Label[], iterations: number = 50, buffer: number = 10): Label[] {
     const results = labels.map(l => ({ ...l, pos: l.pos.copy() }));
     
-    const damping = 0.85;
     const attractionStrength = 0.05;
     const repulsionStrength = 0.4;
 

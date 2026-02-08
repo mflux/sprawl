@@ -2,7 +2,6 @@
 import { Shape2D } from './Shape2D';
 import { Segment2D } from './Segment2D';
 import { ShapeDetector } from './ShapeDetector';
-import { Vector2D } from './Vector2D';
 
 export class ShapeMerger {
   /**

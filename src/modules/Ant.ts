@@ -3,7 +3,6 @@ import { Vector2D } from './Vector2D';
 import { Shape2D } from './Shape2D';
 import { FlowField } from './FlowField';
 import { TerrainFlowField } from './TerrainFlowField';
-import { Segment2D } from './Segment2D';
 import { AntType, SimulationSettings } from '../types';
 
 export type AntUpdateResult = 'alive' | 'death_lifetime' | 'death_oob' | 'death_stale' | 'death_water' | 'target_reached' | 'trail_left';

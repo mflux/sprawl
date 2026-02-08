@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { GenerationCanvas } from '../GenerationCanvas/GenerationCanvas';
 import { state as genState, addProfileLog, saveSettings, saveVizSettings } from '../../state/store';
 import { runLandscapeGen, stepInfo as step1Info } from '../../steps/landscape_gen';
@@ -33,7 +33,7 @@ const STEP_INFO_MAP: Record<number, any> = {
   7: step7Info
 };
 
-export const GenerationView: React.FC<GenerationViewProps> = ({ setView }) => {
+export const GenerationView: React.FC<GenerationViewProps> = ({ setView: _setView }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [isSimulatingTraffic, setIsSimulatingTraffic] = useState(false);
   const [isSimulatingSubdivision, setIsSimulatingSubdivision] = useState(false);

@@ -91,8 +91,6 @@ export const runStructuralAnalysis = () => {
 
   const mergeThreshold = state.settings.mergeAreaThreshold;
   const refinedShapes = profile('ShapeMerger.runAutoMerge', () => ShapeMerger.runAutoMerge(rawShapes, mergeThreshold));
-  const finalCount = refinedShapes.length;
-
   state.shapes = refinedShapes;
 
   // 2. Discover Bridges from the graph

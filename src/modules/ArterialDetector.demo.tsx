@@ -18,7 +18,6 @@ const ArterialDetectorDemo: React.FC = () => {
     }
 
     // 2. Sharp "industrial" corners (bottom)
-    const lastRiver = points[points.length - 1];
     points.push(new Vector2D(90, 40)); // Sharp turn 1
     points.push(new Vector2D(90, 80)); // Sharp turn 2
     points.push(new Vector2D(10, 80)); // Sharp turn 3

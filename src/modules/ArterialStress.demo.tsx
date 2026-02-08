@@ -1,5 +1,5 @@
 
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Vector2D } from './Vector2D';
 import { Shape2D } from './Shape2D';
 import { ArterialDetector } from './ArterialDetector';

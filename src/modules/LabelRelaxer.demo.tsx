@@ -4,7 +4,6 @@ import { LabelRelaxer, Label } from './LabelRelaxer';
 
 const LabelRelaxerDemo: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [iteration, setIteration] = useState(0);
   const [showRelaxed, setShowRelaxed] = useState(true);
   const [buffer, setBuffer] = useState(12);
 

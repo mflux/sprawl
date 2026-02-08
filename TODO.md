@@ -20,31 +20,11 @@ This inverts React's entire model. You lose change detection, batched updates, c
 
 ## Critical: Dependencies & Build
 
-### 2. p5.js as an Untyped 1MB Global
+### 2. ~93 `any` Types Remaining
 
-p5.js (~1.1 MB) is loaded via a CDN `<script>` tag and accessed through `declare const p5: any`. The entire rendering layer (the canvas component plus 20+ draw/bake modules) is completely untyped.
+The codebase still has ~93 `@typescript-eslint/no-explicit-any` warnings, mostly in the canvas rendering layer (draw/bake functions that accept p5 instances as `any`). These prevent full type safety.
 
-The actual p5 API surface used is tiny: `line()`, `ellipse()`, `stroke()`, `fill()`, `createGraphics()`, `image()` — thin wrappers around Canvas2D. You're paying 1 MB of JavaScript for what could be ~50 lines of typed helper functions.
-
-**Fix:** Replace p5.js with direct Canvas2D API calls behind a small typed helper module. This eliminates the CDN dependency, all the `any` types, and ~1 MB of dead weight.
-
----
-
-### 3. Tailwind CSS via Runtime CDN Script
-
-The Tailwind CDN script (`cdn.tailwindcss.com`) is explicitly documented as "for development only." It loads the full Tailwind runtime with zero tree-shaking or purging — meaning the entire CSS framework is parsed at runtime on every page load.
-
-**Fix:** Install Tailwind as a proper build dependency via `@tailwindcss/vite` or the standard PostCSS setup. This gives you purged output, build-time compilation, and IDE IntelliSense.
-
----
-
-### 4. No Linter, No Formatter, No Strict TypeScript
-
-- No ESLint or Prettier configuration
-- `tsconfig.json` has no `strict: true` — meaning no strict null checks, no implicit any errors, no unused variable detection
-- Many `any` types scattered throughout that would be caught with stricter settings
-
-**Fix:** Enable `strict: true` in tsconfig. Add ESLint + Prettier.
+**Fix:** Type the p5 graphics parameters using the `@types/p5` definitions already installed. Consider a thin typed wrapper for the canvas drawing API surface.
 
 ---
 
@@ -101,3 +81,6 @@ Vite's `define` config injects `GEMINI_API_KEY` as a string literal into the bui
 - ~~No test runner~~ — Installed Vitest, rewrote all 30 test files (135 tests) to native `describe`/`it`/`expect`
 - ~~No `src/` directory~~ — Moved all source into `src/`, updated path alias and entry point
 - ~~Dead `index.css` reference~~ — Removed from `index.html`
+- ~~p5.js as untyped CDN global~~ — Installed `p5` + `@types/p5` from npm, replaced `declare const p5: any` with proper import
+- ~~Tailwind CSS via runtime CDN~~ — Installed `tailwindcss` + `@tailwindcss/vite`, purged 42 KB build output replaces full CDN runtime
+- ~~No linter, no strict TypeScript~~ — Enabled `strict: true` in tsconfig, installed ESLint 9 with typescript-eslint + react-hooks plugins, added `lint`/`typecheck` scripts, fixed 35 strict-mode errors

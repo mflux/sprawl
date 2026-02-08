@@ -16,7 +16,7 @@ export const drawShapes = (
   hoveredIndex: number | null, 
   activeSubdivisionIndex: number | null,
   bounds: ViewBounds, 
-  viz: VisualizationSettings,
+  _viz: VisualizationSettings,
   shapesGraphics?: any,
   processedIndices: Set<number> = new Set() // Added to show progress
 ) => {
@@ -107,7 +107,7 @@ export const drawShapes = (
     p.noFill();
 
     const segmentsByArtery = new Map<number, Segment2D[]>();
-    shapeSegments.forEach(ss => {
+    shapeSegments.forEach((ss: Segment2D) => {
       let foundArteryIdx = -1;
       for (let artIdx = 0; artIdx < arterials.length; artIdx++) {
         const artSegments = arterials[artIdx].toSegments();

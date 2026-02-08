@@ -2,10 +2,6 @@
 import { state } from '../state/store';
 import { Vector2D } from '../modules/Vector2D';
 import { Hub } from '../modules/Hub';
-import { RoadNetwork } from '../modules/RoadNetwork';
-import { TerrainCulling } from '../modules/TerrainCulling';
-import { ShapeDetector } from '../modules/ShapeDetector';
-import { ArterialDetector } from '../modules/ArterialDetector';
 import { VisualizationSettings } from '../types';
 
 export const stepInfo: { title: string, desc: string, vizTransitions: Partial<VisualizationSettings> } = {
