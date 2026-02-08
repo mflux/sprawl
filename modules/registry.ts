@@ -23,8 +23,6 @@ import SubdividerDemo from './Subdivider.demo.tsx';
 import { runArterialTests } from './ArterialDetector.test';
 import ArterialDetectorDemo from './ArterialDetector.demo.tsx';
 import ArterialStressDemo from './ArterialStress.demo.tsx';
-import { runBuildingTests } from './Building.test';
-import BuildingDemo from './Building.demo.tsx';
 import { runCullingTests } from './Culling.test';
 import CullingDemo from './Culling.demo.tsx';
 import { runFlowFieldTests } from './FlowField.test';

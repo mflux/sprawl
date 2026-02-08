@@ -3,9 +3,8 @@ import { Vector2D } from './modules/Vector2D';
 import { Ant } from './modules/Ant';
 import { Hub } from './modules/Hub';
 import { Segment2D } from './modules/Segment2D';
-import { Shape2D } from './Shape2D';
+import { Shape2D } from './modules/Shape2D';
 import { Path2D } from './modules/Path2D';
-import { Building } from './modules/Building';
 import { FlowField } from './modules/FlowField';
 import { ElevationMap } from './modules/ElevationMap';
 import { River } from './modules/River';
@@ -182,7 +181,7 @@ export interface GenerationState {
   shapeGrid?: ShapeSpatialGrid; 
   subdivisionQueue: number[]; // Queue of shape indices waiting for subdivision
   processedShapeIndices: Set<number>; 
-  buildings: Building[];
+  buildings: never[];
   arterials: Path2D[];
   shorelines: Segment2D[];
   geography: GeographyMetadata;
