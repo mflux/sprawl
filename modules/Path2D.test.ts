@@ -1,41 +1,32 @@
-
+import { describe, it, expect } from 'vitest';
 import { Vector2D } from './Vector2D';
 import { Path2D } from './Path2D';
 import { Segment2D } from './Segment2D';
-import { TestResult } from '../types';
 
-export const runPathTests = async (): Promise<TestResult[]> => {
-  const results: TestResult[] = [];
+describe('Path2D', () => {
+  it('decomposes an open path into correct number of segments', () => {
+    const p = new Path2D([new Vector2D(0, 0), new Vector2D(10, 0), new Vector2D(10, 10)], false);
+    expect(p.toSegments()).toHaveLength(2);
+  });
 
-  const assert = (name: string, condition: boolean, errorMsg?: string) => {
-    results.push({
-      name,
-      passed: condition,
-      error: condition ? undefined : (errorMsg || 'Assertion failed')
-    });
-  };
+  it('decomposes a closed path with a loop segment', () => {
+    const p = new Path2D([new Vector2D(0, 0), new Vector2D(10, 0), new Vector2D(10, 10)], true);
+    expect(p.toSegments()).toHaveLength(3);
+  });
 
-  // Test 1: Segment Decomposition (Open)
-  const p1 = new Path2D([new Vector2D(0,0), new Vector2D(10,0), new Vector2D(10,10)], false);
-  const segs1 = p1.toSegments();
-  assert('Open path decomposition', segs1.length === 2);
+  it('detects path-segment intersection', () => {
+    const p = new Path2D([new Vector2D(0, 0), new Vector2D(20, 0), new Vector2D(20, 20)], false);
+    const cross = new Segment2D(new Vector2D(10, -10), new Vector2D(10, 10));
+    const hits = p.intersectsSegment(cross);
+    expect(hits).toHaveLength(1);
+    expect(hits[0].equals(new Vector2D(10, 0))).toBe(true);
+  });
 
-  // Test 2: Segment Decomposition (Closed)
-  const p2 = new Path2D([new Vector2D(0,0), new Vector2D(10,0), new Vector2D(10,10)], true);
-  const segs2 = p2.toSegments();
-  assert('Closed path decomposition (adds loop segment)', segs2.length === 3);
-
-  // Test 3: Intersection with segment
-  const p3 = new Path2D([new Vector2D(0,0), new Vector2D(20,0), new Vector2D(20,20)], false);
-  const cross = new Segment2D(new Vector2D(10,-10), new Vector2D(10,10));
-  const hits = p3.intersectsSegment(cross);
-  assert('Path-Segment intersection detection', hits.length === 1 && hits[0].equals(new Vector2D(10,0)));
-
-  // Test 4: Path-Path intersection
-  const pathA = new Path2D([new Vector2D(0,0), new Vector2D(20,20)], false);
-  const pathB = new Path2D([new Vector2D(0,20), new Vector2D(20,0)], false);
-  const pathHits = pathA.intersectsPath(pathB);
-  assert('Path-Path intersection detection', pathHits.length === 1 && pathHits[0].equals(new Vector2D(10,10)));
-
-  return results;
-};
+  it('detects path-path intersection', () => {
+    const a = new Path2D([new Vector2D(0, 0), new Vector2D(20, 20)], false);
+    const b = new Path2D([new Vector2D(0, 20), new Vector2D(20, 0)], false);
+    const hits = a.intersectsPath(b);
+    expect(hits).toHaveLength(1);
+    expect(hits[0].equals(new Vector2D(10, 10))).toBe(true);
+  });
+});

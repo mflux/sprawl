@@ -1,46 +1,29 @@
-
+import { describe, it, expect } from 'vitest';
 import { Vector2D } from './Vector2D';
-import { TestResult } from '../types';
 import { isBoxInView, getPathBounds, ViewBounds } from './Culling';
 
-export const runCullingTests = async (): Promise<TestResult[]> => {
-  const results: TestResult[] = [];
-
-  const assert = (name: string, condition: boolean, errorMsg?: string) => {
-    results.push({
-      name,
-      passed: condition,
-      error: condition ? undefined : (errorMsg || 'Assertion failed')
-    });
-  };
-
+describe('Culling', () => {
   const bounds: ViewBounds = { minX: 0, minY: 0, maxX: 100, maxY: 100 };
 
-  // Test 1: Full inclusion
-  assert('Fully contained box is in view', isBoxInView(10, 10, 20, 20, bounds));
+  it('fully contained box is in view', () => {
+    expect(isBoxInView(10, 10, 20, 20, bounds)).toBe(true);
+  });
 
-  // Test 2: Edge overlap
-  assert('Partially overlapping box is in view', isBoxInView(-10, -10, 10, 10, bounds));
+  it('partially overlapping box is in view', () => {
+    expect(isBoxInView(-10, -10, 10, 10, bounds)).toBe(true);
+  });
 
-  // Test 3: Path culling logic (Fixing the Endpoint Bug)
-  const complexPath = [
-    new Vector2D(-100, 50), 
-    new Vector2D(50, 50), 
-    new Vector2D(-100, 60)
-  ];
-  
-  // INCORRECT LOGIC: Only checking endpoints
-  const cFirst = complexPath[0];
-  const cLast = complexPath[complexPath.length - 1];
-  const culledByBug = (cFirst.x < bounds.minX && cLast.x < bounds.minX);
-  
-  // CORRECT LOGIC: Check the full AABB
-  const pathAABB = getPathBounds(complexPath);
-  const visibleByAABB = isBoxInView(pathAABB.minX, pathAABB.minY, pathAABB.maxX, pathAABB.maxY, bounds);
-  
-  assert('Endpoints-only logic should be identified as buggy', culledByBug === true);
-  assert('Full AABB logic correctly identifies paths crossing viewport', visibleByAABB === true);
-  assert('Path with middle in view but ends out of view should NOT be culled', visibleByAABB, 'AABB culling must detect middle-segments');
+  it('full AABB correctly identifies paths crossing viewport', () => {
+    const path = [new Vector2D(-100, 50), new Vector2D(50, 50), new Vector2D(-100, 60)];
+    const aabb = getPathBounds(path);
+    expect(isBoxInView(aabb.minX, aabb.minY, aabb.maxX, aabb.maxY, bounds)).toBe(true);
+  });
 
-  return results;
-};
+  it('endpoint-only logic would incorrectly cull a path with middle in view', () => {
+    const path = [new Vector2D(-100, 50), new Vector2D(50, 50), new Vector2D(-100, 60)];
+    const first = path[0];
+    const last = path[path.length - 1];
+    // Both endpoints are at x=-100, outside bounds -- would be culled by endpoints-only check
+    expect(first.x < bounds.minX && last.x < bounds.minX).toBe(true);
+  });
+});

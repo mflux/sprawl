@@ -1,39 +1,29 @@
-
+import { describe, it, expect } from 'vitest';
 import { ElevationMap } from './ElevationMap';
-import { TestResult } from '../types';
 
-export const runElevationTests = async (): Promise<TestResult[]> => {
-  const results: TestResult[] = [];
-
-  const assert = (name: string, condition: boolean, errorMsg?: string) => {
-    results.push({
-      name,
-      passed: condition,
-      error: condition ? undefined : (errorMsg || 'Assertion failed')
-    });
-  };
-
+describe('ElevationMap', () => {
   const map = new ElevationMap(12345);
 
-  // Test 1: Range
-  const heights = Array.from({ length: 100 }, () => map.getHeight(Math.random() * 1000, Math.random() * 1000));
-  const allInRange = heights.every(h => h >= 0 && h <= 1);
-  assert('Elevation values are normalized between 0 and 1', allInRange);
+  it('elevation values are normalized between 0 and 1', () => {
+    const heights = Array.from({ length: 100 }, () => map.getHeight(Math.random() * 1000, Math.random() * 1000));
+    expect(heights.every(h => h >= 0 && h <= 1)).toBe(true);
+  });
 
-  // Test 2: Continuity
-  const h1 = map.getHeight(100, 100);
-  const h2 = map.getHeight(100.1, 100.1);
-  const diff = Math.abs(h1 - h2);
-  assert('Elevation is spatially continuous (smooth)', diff < 0.05);
+  it('elevation is spatially continuous', () => {
+    const h1 = map.getHeight(100, 100);
+    const h2 = map.getHeight(100.1, 100.1);
+    expect(Math.abs(h1 - h2)).toBeLessThan(0.05);
+  });
 
-  // Test 3: Deterministic check
-  const hA = map.getHeight(500, 500);
-  const hB = map.getHeight(500, 500);
-  assert('Height calculation is deterministic for same seed/coords', hA === hB);
+  it('height is deterministic for same seed and coords', () => {
+    expect(map.getHeight(500, 500)).toBe(map.getHeight(500, 500));
+  });
 
-  // Test 4: Water Level Categorization
-  assert('Low heights are categorized as water', map.getCategory(0.1, 0.3) === 'water');
-  assert('High heights are categorized as snow', map.getCategory(0.95, 0.3) === 'snow');
+  it('categorizes low heights as water', () => {
+    expect(map.getCategory(0.1, 0.3)).toBe('water');
+  });
 
-  return results;
-};
+  it('categorizes high heights as snow', () => {
+    expect(map.getCategory(0.95, 0.3)).toBe('snow');
+  });
+});
