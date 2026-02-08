@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { GenerationCanvas } from '../GenerationCanvas/GenerationCanvas';
+import { GenerationCanvas } from '../GenerationCanvas';
 import engine, { EnginePhase } from '../../state/engine';
 import { useUIStore } from '../../state/uiStore';
 import { VisualizationSettings } from '../../types';
