@@ -1,5 +1,5 @@
 
-import { addProfileLog } from '../state/store';
+import { addProfileLog } from '../state/engine';
 
 /**
  * Utility to measure and record the execution time of a synchronous function.

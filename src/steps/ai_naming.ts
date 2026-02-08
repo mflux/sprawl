@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { state, addEvent } from '../state/store';
+import { state, addEvent } from '../state/engine';
 import { profile } from '../utils/Profiler';
 import { Vector2D } from '../modules/Vector2D';
 import { VisualizationSettings } from "../types";

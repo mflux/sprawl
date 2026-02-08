@@ -2,19 +2,9 @@
 
 ## Critical: Architecture
 
-### 1. Replace Global Mutable State with a Real State Manager
+### ~~1. Replace Global Mutable State with a Real State Manager~~ — DONE
 
-The entire app is driven by a single mutable plain object (`state` in `store.ts`) that is imported and directly mutated from components, hooks, and step functions. React has zero awareness of these changes. The only way the UI updates is a manual hack: incrementing a counter (`setTick(t => t + 1)`) to force re-renders.
-
-This inverts React's entire model. You lose change detection, batched updates, concurrent rendering, dev tools support, and the ability to reason about when or why something re-rendered.
-
-**Symptoms caused by this:**
-- ~20 refs in `GenerationCanvas` exist solely to work around stale closures and manual change detection
-- `triggerUpdate()` must be called manually after every mutation, and forgetting it causes silent bugs
-- `resetState()` manually nulls every field — fragile and guaranteed to drift from the type definition
-- Impossible to implement undo/redo, time-travel debugging, or snapshot testing
-
-**Fix:** Migrate to Zustand (simplest path — supports mutable-style updates via Immer, selectors for render optimization, and works naturally with the existing code shape). Step functions should update state through the store rather than reaching into a global.
+Migrated to a split architecture: **Zustand** for UI/settings state (`uiStore.ts` with persist middleware) and a standalone **Simulation Engine** (`engine.ts`) for mutable game state and orchestration loops. The engine owns all simulation state, phase control (start/pause/step/resolve), and a subscriber pattern that bumps a Zustand tick counter to trigger React re-renders. Settings auto-sync from Zustand → Engine via a bridge module. Deleted the old `store.ts` and `useSimulation.ts`. All 7 step files, all UI components, and the canvas now import from engine/uiStore.
 
 ---
 
@@ -46,21 +36,19 @@ Multiple `setInterval` calls at 16ms drive the simulation, hub animation, subdiv
 
 ---
 
-### 7. Duplicated Hub Resolution Logic
+### ~~7. Duplicated Hub Resolution Logic~~ — DONE
 
-Hub processing (road snapping, distance-to-water calculation, terrain culling, shape detection) is implemented twice in `GenerationView`: once in `resolveHubs` (instant resolution) and once in the hub animation `useEffect` (animated one-at-a-time). Any change to one must be mirrored in the other.
-
-**Fix:** Extract "process one hub" into a shared function. Have `resolveHubs` call it in a loop, and the animation interval call it per tick.
+Hub processing logic now lives in the engine in a single place. `resolveHubs()` and `startHubAnimationLoop()` both share the same state manipulation code in `engine.ts`.
 
 ---
 
 ### 8. Monolithic Component Files
 
 - `GenerationCanvas` (484 lines): Contains inline worker code, p5 sketch lifecycle, elevation baking, 6+ graphics buffer caches, mouse/touch/pinch handlers, zoom/pan transform, and the full render loop — all in one component.
-- `GenerationView` (351 lines): Orchestrates a 7-step pipeline with complex state machine logic, 4 separate `useEffect`/`setInterval` loops, and multiple resolve/skip functions.
-- `useSimulation` (406 lines): Mixes ant physics, road intersection detection, capsule collision, boundary clipping, wave management, and road network cleanup into one hook.
+- ~~`GenerationView` (351 lines)~~ — Reduced to ~170 lines; orchestration moved to `engine.ts`
+- ~~`useSimulation` (406 lines)~~ — Deleted; ant physics, collisions, wave management absorbed into `engine.ts`
 
-**Fix:** Separate rendering concerns (canvas, transform, input) from simulation concerns (physics, collisions, network). Extract the step orchestration into a dedicated state machine or workflow manager. Each draw/bake module is already in its own file — the component just needs to stop doing everything itself.
+**Remaining:** `GenerationCanvas` is still large (~480 lines) due to inline worker code and p5 lifecycle. Extract the worker to a separate file (see #5) and the canvas will shrink further.
 
 ---
 
@@ -84,3 +72,7 @@ Vite's `define` config injects `GEMINI_API_KEY` as a string literal into the bui
 - ~~p5.js as untyped CDN global~~ — Installed `p5` + `@types/p5` from npm, replaced `declare const p5: any` with proper import
 - ~~Tailwind CSS via runtime CDN~~ — Installed `tailwindcss` + `@tailwindcss/vite`, purged 42 KB build output replaces full CDN runtime
 - ~~No linter, no strict TypeScript~~ — Enabled `strict: true` in tsconfig, installed ESLint 9 with typescript-eslint + react-hooks plugins, added `lint`/`typecheck` scripts, fixed 35 strict-mode errors
+- ~~Global mutable state~~ — Migrated to Zustand (UI state with persist) + standalone Simulation Engine (mutable game state + phase orchestration). Deleted `store.ts` and `useSimulation.ts`. All components, steps, and canvas updated.
+- ~~Duplicated hub resolution logic~~ — Consolidated into `engine.ts`
+- ~~Monolithic `useSimulation` hook (406 lines)~~ — Absorbed into `engine.ts`
+- ~~`GenerationView` orchestration (351 lines)~~ — Reduced to ~170 lines; loops moved to engine

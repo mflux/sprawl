@@ -1,4 +1,4 @@
-import { state, resetState } from '../state/store';
+import { state, resetEngine as resetState } from '../state/engine';
 import { Vector2D } from '../modules/Vector2D';
 import { TerrainFlowField } from '../modules/TerrainFlowField';
 import { ElevationMap } from '../modules/ElevationMap';

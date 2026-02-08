@@ -1,5 +1,5 @@
 
-import { state } from '../state/store';
+import { state } from '../state/engine';
 import { Vector2D } from '../modules/Vector2D';
 import { Hub } from '../modules/Hub';
 import { VisualizationSettings } from '../types';

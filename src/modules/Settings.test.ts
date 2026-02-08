@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { state, saveSettings } from '../state/store';
+import { state } from '../state/engine';
+import { useUIStore } from '../state/uiStore';
 import { SimulationSettings } from '../types';
 
 describe('Settings', () => {
@@ -20,13 +21,11 @@ describe('Settings', () => {
     expect(state.settings.antMaxLife).toBeGreaterThan(0);
   });
 
-  it('can update and persist a setting value', () => {
-    const original = state.settings.hubCount;
-    state.settings.hubCount = 99;
-    saveSettings(state.settings);
-    expect(state.settings.hubCount).toBe(99);
+  it('can update a setting value via Zustand store', () => {
+    const original = useUIStore.getState().settings.hubCount;
+    useUIStore.getState().updateSetting('hubCount', 99);
+    expect(useUIStore.getState().settings.hubCount).toBe(99);
     // Cleanup
-    state.settings.hubCount = original;
-    saveSettings(state.settings);
+    useUIStore.getState().updateSetting('hubCount', original);
   });
 });

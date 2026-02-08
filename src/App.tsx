@@ -5,6 +5,9 @@ import { Header } from './components/Header';
 import { GenerationView } from './components/GenerationView';
 import { ConceptsView } from './components/ConceptsView';
 
+// Wire up engine ↔ Zustand settings sync + notification bridge
+import './state/bridge';
+
 const App: React.FC = () => {
   const [view, setView] = useState<AppView>('generation');
 
@@ -13,7 +16,7 @@ const App: React.FC = () => {
       <Header currentView={view} setView={setView} />
       
       {view === 'generation' ? (
-        <GenerationView setView={setView} />
+        <GenerationView />
       ) : (
         <ConceptsView />
       )}

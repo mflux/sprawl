@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DEFAULT_VIZ_SETTINGS } from '../state/store';
+import { DEFAULT_VIZ_SETTINGS } from '../state/uiStore';
 
 describe('RenderingConsistency', () => {
   const viz = DEFAULT_VIZ_SETTINGS;

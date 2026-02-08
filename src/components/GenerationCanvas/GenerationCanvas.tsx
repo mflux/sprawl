@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef } from 'react';
-import { GenerationState } from '../../types';
+import engine from '../../state/engine';
 import * as Drawers from './drawers';
 import { Vector2D } from '../../modules/Vector2D';
 
@@ -10,9 +10,7 @@ import p5 from 'p5';
 const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 interface GenerationCanvasProps {
-  state: GenerationState;
   activeStep: number;
-  onUpdate: () => void;
 }
 
 // WORKER CODE AS A BLOB-SAFE STRING
@@ -119,13 +117,11 @@ const WORKER_CODE = `
   };
 `;
 
-export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activeStep, onUpdate }) => {
+export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ activeStep }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const p5Instance = useRef<p5 | null>(null);
   const canvasElementRef = useRef<HTMLCanvasElement | null>(null);
-  const stateRef = useRef<GenerationState>(state);
   const activeStepRef = useRef<number>(activeStep);
-  const onUpdateRef = useRef<() => void>(onUpdate);
   
   const elevationGraphicsRef = useRef<p5.Graphics | null>(null);
   const lastElevationRef = useRef<unknown>(null);
@@ -150,28 +146,34 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
   
   const lastResetHandledRef = useRef<number>(0);
 
+  // Keep activeStep ref in sync
   useEffect(() => {
-    stateRef.current = state;
     activeStepRef.current = activeStep;
-    onUpdateRef.current = onUpdate;
-    
-    if (state.lastReset > lastResetHandledRef.current) {
-      lastResetHandledRef.current = state.lastReset;
-      if (shapesGraphicsRef.current) shapesGraphicsRef.current.clear();
-      if (arterialsGraphicsRef.current) arterialsGraphicsRef.current.clear();
-      if (roadsGraphicsRef.current) roadsGraphicsRef.current.clear();
-      lastElevationRef.current = null;
-      lastFlowFieldRef.current = null;
-      lastShorelineRef.current = null;
-      lastShapesCountRef.current = 0;
-      lastArterialsCountRef.current = 0;
-      lastRoadsCountRef.current = 0;
-      if (elevationGraphicsRef.current) elevationGraphicsRef.current.clear();
-      if (flowGraphicsRef.current) flowGraphicsRef.current.clear();
-      if (shorelineInteriorGraphicsRef.current) shorelineInteriorGraphicsRef.current.clear();
-      if (shorelineEdgeGraphicsRef.current) shorelineEdgeGraphicsRef.current.clear();
-    }
-  }, [state.iteration, state.lastReset, activeStep, onUpdate]);
+  }, [activeStep]);
+
+  // Handle engine state resets (clear graphics caches)
+  useEffect(() => {
+    const unsubscribe = engine.subscribe(() => {
+      const s = engine.state;
+      if (s.lastReset > lastResetHandledRef.current) {
+        lastResetHandledRef.current = s.lastReset;
+        if (shapesGraphicsRef.current) shapesGraphicsRef.current.clear();
+        if (arterialsGraphicsRef.current) arterialsGraphicsRef.current.clear();
+        if (roadsGraphicsRef.current) roadsGraphicsRef.current.clear();
+        lastElevationRef.current = null;
+        lastFlowFieldRef.current = null;
+        lastShorelineRef.current = null;
+        lastShapesCountRef.current = 0;
+        lastArterialsCountRef.current = 0;
+        lastRoadsCountRef.current = 0;
+        if (elevationGraphicsRef.current) elevationGraphicsRef.current.clear();
+        if (flowGraphicsRef.current) flowGraphicsRef.current.clear();
+        if (shorelineInteriorGraphicsRef.current) shorelineInteriorGraphicsRef.current.clear();
+        if (shorelineEdgeGraphicsRef.current) shorelineEdgeGraphicsRef.current.clear();
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     const blob = new Blob([WORKER_CODE], { type: 'application/javascript' });
@@ -190,12 +192,12 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
         pg.image(img, chunkX, chunkY);
         completedJobsRef.current++;
         if (bakeJobCountRef.current > 0) {
-          stateRef.current.elevationBakeProgress = (completedJobsRef.current / bakeJobCountRef.current) * 100;
+          engine.state.elevationBakeProgress = (completedJobsRef.current / bakeJobCountRef.current) * 100;
           if (completedJobsRef.current >= bakeJobCountRef.current) {
-            stateRef.current.isBakingElevation = false;
+            engine.state.isBakingElevation = false;
           }
         }
-        onUpdateRef.current();
+        engine.notify();
       }
     };
 
@@ -225,7 +227,7 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
         canvasElementRef.current = canvas.elt;
         canvas.parent(containerRef.current!);
         p.pixelDensity(window.devicePixelRatio || 1);
-        const s = stateRef.current;
+        const s = engine.state;
         const centerX = (p.width - s.simWidth * transform.scale) / 2;
         const centerY = (p.height - s.simHeight * transform.scale) / 2;
         transform.offset = new Vector2D(centerX, centerY);
@@ -233,7 +235,7 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
 
       p.draw = () => {
         const frameStart = performance.now();
-        const s = stateRef.current;
+        const s = engine.state;
         const curStep = activeStepRef.current;
         const { offset, scale } = transform;
         const viz = s.visualizationSettings;
@@ -283,7 +285,7 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
             worker.postMessage(job);
           });
           s.renderTimings['ELEV_BAKE_INIT'] = performance.now() - bakeStart;
-          onUpdateRef.current();
+          engine.notify();
         }
 
         if (s.flowField && s.flowField !== lastFlowFieldRef.current) {
@@ -438,7 +440,6 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
           const centerY = (t[0].y + t[1].y) / 2;
           const currentMidpoint = new Vector2D(centerX, centerY);
           
-          // Stable anchor scale & pan (Google Maps style)
           const worldPointAtGestureStart = transform.lastPinchMidpoint.sub(transform.lastPinchOffset).div(transform.lastPinchScale);
           transform.offset = currentMidpoint.sub(worldPointAtGestureStart.mul(newS));
           transform.scale = newS;

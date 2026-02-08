@@ -3,7 +3,7 @@ import React from 'react';
 import { Vector2D } from './Vector2D';
 import { Segment2D } from './Segment2D';
 import { Shape2D } from './Shape2D';
-import { DEFAULT_VIZ_SETTINGS } from '../state/store';
+import { DEFAULT_VIZ_SETTINGS } from '../state/uiStore';
 
 const RenderingConsistencyDemo: React.FC = () => {
   const viz = DEFAULT_VIZ_SETTINGS;

@@ -1,13 +1,14 @@
 
 import React, { useState } from 'react';
-import { ProfileLog } from '../../types';
+import engine from '../../state/engine';
+import { useUIStore } from '../../state/uiStore';
 
-interface ProfilingWindowProps {
-  logs: ProfileLog[];
-}
-
-export const ProfilingWindow: React.FC<ProfilingWindowProps> = ({ logs }) => {
+export const ProfilingWindow: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(true);
+  // Subscribe to tick so we re-render when engine state changes
+  useUIStore((s) => s.tick);
+
+  const logs = engine.state.profileLogs;
 
   const stopEvent = (e: React.SyntheticEvent) => {
     e.stopPropagation();

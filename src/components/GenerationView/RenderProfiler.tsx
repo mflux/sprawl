@@ -1,21 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { GenerationState } from '../../types';
+import engine from '../../state/engine';
 
-interface RenderProfilerProps {
-  state: GenerationState;
-}
-
-export const RenderProfiler: React.FC<RenderProfilerProps> = ({ state }) => {
+export const RenderProfiler: React.FC = () => {
   const [show, setShow] = useState(false);
   const [localTimings, setLocalTimings] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setLocalTimings({ ...state.renderTimings });
+      setLocalTimings({ ...engine.state.renderTimings });
     }, 100);
     return () => clearInterval(interval);
-  }, [state]);
+  }, []);
 
   if (!show) {
     return (
@@ -33,7 +29,6 @@ export const RenderProfiler: React.FC<RenderProfilerProps> = ({ state }) => {
   const bakeEntries = entries.filter(([key]) => key.includes('_BAKE') || key.includes('_INIT'));
 
   const renderTotal = localTimings['RENDER_TOTAL'] || 1;
-  // FPS calculation is strictly based on the actual render phase
   const fps = Math.round(1000 / renderTotal);
 
   const stopEvent = (e: React.SyntheticEvent) => e.stopPropagation();
@@ -50,7 +45,6 @@ export const RenderProfiler: React.FC<RenderProfilerProps> = ({ state }) => {
       </div>
 
       <div className="p-3 space-y-4">
-        {/* Active Render Statistics */}
         <div className="space-y-2">
           <div className="flex justify-between items-baseline border-b border-white/5 pb-1 mb-1">
             <span className="text-[8px] font-black text-slate-500 uppercase tracking-tighter">Real-Time Draw</span>
@@ -82,7 +76,6 @@ export const RenderProfiler: React.FC<RenderProfilerProps> = ({ state }) => {
           </div>
         </div>
 
-        {/* Synthesis Pipeline (Baking) - These are NOT real-time per frame */}
         {bakeEntries.length > 0 && (
           <div className="space-y-2 pt-2 border-t border-white/5">
             <span className="text-[7px] font-black text-slate-600 uppercase tracking-tighter">Synthesis Pipeline (Bake)</span>

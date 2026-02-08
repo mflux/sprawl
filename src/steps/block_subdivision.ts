@@ -1,4 +1,4 @@
-import { state, addEvent } from '../state/store';
+import { state, addEvent } from '../state/engine';
 import { TransposeGrid } from '../modules/TransposeGrid';
 import { ArterialDetector } from '../modules/ArterialDetector';
 import { RoadNetwork } from '../modules/RoadNetwork';

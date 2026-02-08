@@ -1,5 +1,5 @@
 
-import { state, addEvent } from '../state/store';
+import { state, addEvent } from '../state/engine';
 import { ShapeDetector } from '../modules/ShapeDetector';
 import { ShapeMerger } from '../modules/ShapeMerger';
 import { ArterialDetector } from '../modules/ArterialDetector';

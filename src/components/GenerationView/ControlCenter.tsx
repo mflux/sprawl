@@ -1,19 +1,10 @@
 
 import React, { useState } from 'react';
-import { GenerationState } from '../../types';
 import { GeographyInspector } from './GeographyInspector';
 import { VisualizationControls } from './VisualizationControls';
 import { SimulationSettingsControls } from './SimulationSettingsControls';
 
-interface ControlCenterProps {
-  state: GenerationState;
-  onSettingChange: () => void;
-}
-
-export const ControlCenter: React.FC<ControlCenterProps> = ({ 
-  state, 
-  onSettingChange 
-}) => {
+export const ControlCenter: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showViz, setShowViz] = useState(false);
   const [showGeo, setShowGeo] = useState(false);
@@ -39,9 +30,7 @@ export const ControlCenter: React.FC<ControlCenterProps> = ({
           <span>Geography Inspector</span>
           <span className="text-xs">{showGeo ? '−' : '+'}</span>
         </button>
-        {showGeo && (
-          <GeographyInspector state={state} onUpdate={onSettingChange} />
-        )}
+        {showGeo && <GeographyInspector />}
 
         {/* Visualizations Panel */}
         <button 
@@ -51,9 +40,7 @@ export const ControlCenter: React.FC<ControlCenterProps> = ({
           <span>Visualizations</span>
           <span className="text-xs">{showViz ? '−' : '+'}</span>
         </button>
-        {showViz && (
-          <VisualizationControls state={state} onUpdate={onSettingChange} />
-        )}
+        {showViz && <VisualizationControls />}
 
         {/* Global Settings Panel */}
         <button 
@@ -63,9 +50,7 @@ export const ControlCenter: React.FC<ControlCenterProps> = ({
           <span>Global Settings</span>
           <span className="text-xs">{showSettings ? '−' : '+'}</span>
         </button>
-        {showSettings && (
-          <SimulationSettingsControls state={state} onUpdate={onSettingChange} />
-        )}
+        {showSettings && <SimulationSettingsControls />}
       </div>
     </div>
   );

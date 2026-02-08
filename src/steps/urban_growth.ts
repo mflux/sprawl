@@ -1,5 +1,5 @@
 
-import { state, addEvent } from '../state/store';
+import { state, addEvent } from '../state/engine';
 import { Vector2D } from '../modules/Vector2D';
 import { Ant } from '../modules/Ant';
 import { Hub } from '../modules/Hub';
