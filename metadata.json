@@ -1,0 +1,5 @@
+{
+  "name": "UrbanGenesis: City Generator from First Principles",
+  "description": "A modular framework for building city generation algorithms, starting from fundamental geometry and expanding into complex urban simulations. Includes integrated testing and visual demonstrations for every module.",
+  "requestFramePermissions": []
+}
