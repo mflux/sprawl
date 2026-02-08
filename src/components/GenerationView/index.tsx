@@ -84,7 +84,6 @@ export const GenerationView: React.FC = () => {
 
   // Derive UI state from engine
   const s = engine.state;
-  const phase = engine.getPhase();
   const running = engine.isRunning();
 
   // Current step completion and controls — driven by the step definition
@@ -138,7 +137,7 @@ export const GenerationView: React.FC = () => {
       <WorkflowDock
         onExecuteStep={executeStep}
         activeStep={activeStep}
-        isSimulating={running || isGeneratingLandscape || phase === 'naming' || s.isBakingElevation}
+        isSimulating={running || isGeneratingLandscape || !isCurrentComplete || s.isBakingElevation}
         setIsSimulating={handleToggleSim}
         onStep={handleStep}
         onResolve={handleResolve}
