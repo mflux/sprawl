@@ -5,8 +5,6 @@ export const bakeShapes = (
   p: any,
   pg: any,
   shapes: any[],
-  _simWidth: number,
-  _simHeight: number
 ) => {
   pg.clear();
   pg.noStroke();

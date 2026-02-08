@@ -309,7 +309,7 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
              if (shorelineEdgeGraphicsRef.current) shorelineEdgeGraphicsRef.current.remove();
              shorelineEdgeGraphicsRef.current = p.createGraphics(ff.width, ff.height);
           }
-          Drawers.bakeShorelineInterior(p, shorelineInteriorGraphicsRef.current, s.elevation!, s.settings.terrainWaterLevel, ff.width, ff.height);
+          Drawers.bakeShorelineInterior(shorelineInteriorGraphicsRef.current, s.elevation!, s.settings.terrainWaterLevel, ff.width, ff.height);
           Drawers.bakeShorelineEdge(p, shorelineEdgeGraphicsRef.current, s.shorelines);
           s.renderTimings['SHORE_BAKE'] = performance.now() - bakeStart;
         }
@@ -318,7 +318,7 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
           const bakeStart = performance.now();
           lastShapesCountRef.current = s.shapes.length;
           if (!shapesGraphicsRef.current) shapesGraphicsRef.current = p.createGraphics(s.simWidth, s.simHeight);
-          Drawers.bakeShapes(p, shapesGraphicsRef.current, s.shapes, s.simWidth, s.simHeight);
+          Drawers.bakeShapes(p, shapesGraphicsRef.current, s.shapes);
           s.renderTimings['SHAPE_BAKE'] = performance.now() - bakeStart;
         }
         
@@ -326,7 +326,7 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
           const bakeStart = performance.now();
           lastArterialsCountRef.current = s.arterials.length;
           if (!arterialsGraphicsRef.current) arterialsGraphicsRef.current = p.createGraphics(s.simWidth, s.simHeight);
-          Drawers.bakeArterials(p, arterialsGraphicsRef.current, s.arterials, viz, s.simWidth, s.simHeight);
+          Drawers.bakeArterials(p, arterialsGraphicsRef.current, s.arterials, viz);
           s.renderTimings['ART_BAKE'] = performance.now() - bakeStart;
         }
 
@@ -373,7 +373,7 @@ export const GenerationCanvas: React.FC<GenerationCanvasProps> = ({ state, activ
         }
         
         layerStart = performance.now();
-        Drawers.drawShapes(p, s.shapes, s.arterials, null, s.activeSubdivisionIndex, viewBounds, viz, shapesGraphicsRef.current, s.processedShapeIndices);
+        Drawers.drawShapes(p, s.shapes, s.arterials, null, s.activeSubdivisionIndex, viewBounds, shapesGraphicsRef.current, s.processedShapeIndices);
         s.renderTimings['SHAPE_RENDER'] = performance.now() - layerStart;
 
         layerStart = performance.now();

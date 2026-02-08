@@ -32,7 +32,7 @@ const ShapeMergerDemo: React.FC = () => {
     setSelectedIdx(null);
   };
 
-  const handleCanvasClick = (_e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleCanvasClick = () => {
     if (hoveredIdx === null) {
       setSelectedIdx(null);
       return;

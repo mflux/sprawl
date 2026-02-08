@@ -120,7 +120,6 @@ export const state: GenerationState = {
   shapeGrid: undefined,
   subdivisionQueue: [],
   processedShapeIndices: new Set(),
-  buildings: [],
   arterials: [],
   shorelines: [],
   geography: {
@@ -160,7 +159,6 @@ export const resetState = () => {
   state.shapeGrid = undefined;
   state.subdivisionQueue = [];
   state.processedShapeIndices = new Set();
-  state.buildings = [];
   state.arterials = [];
   state.shorelines = [];
   state.geography = {

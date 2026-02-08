@@ -142,7 +142,7 @@ export const finalizeSubdivision = () => {
     state.shapeGrid = grid;
   }
   
-  addEvent('buildings_constructed', [], new Vector2D(window.innerWidth/2, window.innerHeight/2), undefined, { 
+  addEvent('subdivision_complete', [], new Vector2D(window.innerWidth/2, window.innerHeight/2), undefined, { 
     message: "Block subdivision complete via organic structural transpose grid." 
   });
 

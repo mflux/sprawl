@@ -1,6 +1,5 @@
 
 import { isBoxInView, getPathBounds, ViewBounds } from '../../modules/Culling';
-import { VisualizationSettings } from '../../types';
 import { Path2D } from '../../modules/Path2D';
 import { Segment2D } from '../../modules/Segment2D';
 
@@ -16,7 +15,6 @@ export const drawShapes = (
   hoveredIndex: number | null, 
   activeSubdivisionIndex: number | null,
   bounds: ViewBounds, 
-  _viz: VisualizationSettings,
   shapesGraphics?: any,
   processedIndices: Set<number> = new Set() // Added to show progress
 ) => {

@@ -26,7 +26,7 @@ export interface ModuleDefinition {
 
 export type AppView = 'generation' | 'concepts';
 
-export type SimEventType = 'spawn' | 'death_lifetime' | 'death_collision' | 'death_oob' | 'death_stale' | 'death_water' | 'target_reached' | 'trail_left' | 'shapes_detected' | 'shapes_merged' | 'arterials_detected' | 'buildings_constructed' | 'traffic_simulated' | 'naming_complete' | 'bridge_built' | 'bridge_started';
+export type SimEventType = 'spawn' | 'death_lifetime' | 'death_collision' | 'death_oob' | 'death_stale' | 'death_water' | 'target_reached' | 'trail_left' | 'shapes_detected' | 'shapes_merged' | 'arterials_detected' | 'subdivision_complete' | 'traffic_simulated' | 'naming_complete' | 'bridge_built' | 'bridge_started';
 
 export interface SimEvent {
   id: string;
@@ -181,7 +181,6 @@ export interface GenerationState {
   shapeGrid?: ShapeSpatialGrid; 
   subdivisionQueue: number[]; // Queue of shape indices waiting for subdivision
   processedShapeIndices: Set<number>; 
-  buildings: never[];
   arterials: Path2D[];
   shorelines: Segment2D[];
   geography: GeographyMetadata;

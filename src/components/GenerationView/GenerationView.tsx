@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { GenerationCanvas } from '../GenerationCanvas/GenerationCanvas';
-import { state as genState, addProfileLog, saveSettings, saveVizSettings } from '../../state/store';
+import { state as genState, saveSettings, saveVizSettings } from '../../state/store';
 import { runLandscapeGen, stepInfo as step1Info } from '../../steps/landscape_gen';
 import { runInfrastructureGen, stepInfo as step2Info } from '../../steps/infrastructure_gen';
 import { runUrbanGrowth, stepInfo as step3Info } from '../../steps/urban_growth';
@@ -20,7 +20,7 @@ import { ShapeDetector } from '../../modules/ShapeDetector';
 import { ArterialDetector } from '../../modules/ArterialDetector';
 
 interface GenerationViewProps {
-  setView?: (view: 'generation' | 'concepts') => void;
+  setView?: (view: 'generation' | 'concepts') => void;  // kept for App.tsx caller, unused here for now
 }
 
 const STEP_INFO_MAP: Record<number, any> = {
@@ -33,7 +33,7 @@ const STEP_INFO_MAP: Record<number, any> = {
   7: step7Info
 };
 
-export const GenerationView: React.FC<GenerationViewProps> = ({ setView: _setView }) => {
+export const GenerationView: React.FC<GenerationViewProps> = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [isSimulatingTraffic, setIsSimulatingTraffic] = useState(false);
   const [isSimulatingSubdivision, setIsSimulatingSubdivision] = useState(false);
@@ -47,11 +47,7 @@ export const GenerationView: React.FC<GenerationViewProps> = ({ setView: _setVie
     setTick(t => t + 1);
   }, []);
 
-  const onSimulationFinished = useCallback((functionName: string, duration: number) => {
-    addProfileLog(functionName, duration);
-  }, []);
-
-  const { isSimulating, setIsSimulating, stepSimulation, resolveSimulation: resolveAnts } = useSimulation(triggerUpdate, onSimulationFinished);
+  const { isSimulating, setIsSimulating, stepSimulation, resolveSimulation: resolveAnts } = useSimulation(triggerUpdate);
 
   const applyVizTransitions = useCallback((step: number) => {
     const info = STEP_INFO_MAP[step];
@@ -117,7 +113,6 @@ export const GenerationView: React.FC<GenerationViewProps> = ({ setView: _setVie
   const resolveSubdivision = useCallback(() => {
     if (genState.subdivisionQueue.length === 0) return;
     setIsSimulatingSubdivision(false);
-    const start = performance.now();
     while (genState.subdivisionQueue.length > 0) {
       const index = genState.subdivisionQueue.shift();
       if (index !== undefined) {
@@ -128,9 +123,8 @@ export const GenerationView: React.FC<GenerationViewProps> = ({ setView: _setVie
     }
     genState.activeSubdivisionIndex = null;
     finalizeSubdivision();
-    onSimulationFinished('BlockSubdivision.resolveInstant', performance.now() - start);
     triggerUpdate();
-  }, [triggerUpdate, onSimulationFinished]);
+  }, [triggerUpdate]);
 
   const executeStep = useCallback(async (step: number) => {
     if (activeStep === 2 && step !== 2) resolveHubs();

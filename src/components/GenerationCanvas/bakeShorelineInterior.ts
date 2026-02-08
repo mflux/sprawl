@@ -4,7 +4,6 @@ import { ElevationMap } from '../../modules/ElevationMap';
  * Bakes the internal technical "water" indicators: dot matrix and faint underlay.
  */
 export const bakeShorelineInterior = (
-  _p: any,
   pg: any,
   elevation: ElevationMap,
   waterLevel: number,
