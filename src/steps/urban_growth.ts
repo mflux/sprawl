@@ -296,25 +296,38 @@ export const spawnAntWave = () => {
       settings: state.settings
     }));
   });
-
   // 4. Strategic Bridge Builder Spawning
   if (state.elevation && Math.random() < state.settings.bridgeProbability) {
     const waterLevel = state.settings.terrainWaterLevel;
     const maxBridgeLen = state.settings.maxBridgeLength;
-    const MIN_BRIDGE_SEP = 350; 
-    const MIN_LAKE_AREA_FOR_BRIDGE = 60000; 
+    const MIN_BRIDGE_SEP = 350;
+    const MIN_LAKE_AREA_FOR_BRIDGE = 60000;
 
     const isCrossingPermitted = (start: Vector2D, end: Vector2D): boolean => {
+      const startH = state.elevation!.getHeight(start.x, start.y);
+      const endH = state.elevation!.getHeight(end.x, end.y);
+      
+      // Both endpoints must be on land
+      if (startH < waterLevel || endH < waterLevel) return false;
+      
+      // Check if bridge actually crosses water
       const mid = start.add(end).div(2);
-      const nearRiver = state.rivers.some(river => river.getInfluence(mid) > 0.05);
-      if (nearRiver) return true;
+      const midH = state.elevation!.getHeight(mid.x, mid.y);
+      
+      // Midpoint must be in water for a valid crossing
+      if (midH >= waterLevel) return false;
+      
+      // BLOCK lakes entirely
       const waterBody = state.geography.waterBodies.find(wb => {
         const center = new Vector2D(wb.center.x, wb.center.y);
         const approxRadius = Math.sqrt(wb.area / Math.PI);
         return mid.dist(center) < approxRadius * 1.5;
       });
-      if (waterBody && waterBody.area >= MIN_LAKE_AREA_FOR_BRIDGE) return true;
-      return false;
+      if (waterBody) return false;
+      
+      // ALLOW only rivers
+      const nearRiver = state.rivers.some(river => river.getInfluence(mid) > 0.05);
+      return nearRiver;
     };
     
     const deadEndNearWater = Array.from(vertexMap.values()).filter(v => {
@@ -353,7 +366,7 @@ export const spawnAntWave = () => {
               if (landingConflict) break;
               if (!isCrossingPermitted(v.pos, checkPos)) break;
 
-              let score = 100; 
+              let score = 100;
               let nearestHubDist = Infinity;
               state.hubs.forEach(hub => {
                 const dist = checkPos.dist(hub.position);
@@ -412,7 +425,7 @@ export const spawnAntWave = () => {
     });
   }
 
-  state.ants = newAnts;
+state.ants = state.ants.filter(a => a.isAlive).concat(newAnts);
 };
 
 export const runUrbanGrowth = () => {
